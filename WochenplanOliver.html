@@ -5,128 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Wochenplan Oliver</title>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f8fafc;
-            color: #334155;
-            max-width: 800px;
-            margin: 20px auto;
-            padding: 15px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc; color: #334155; max-width: 800px; margin: 20px auto; padding: 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         h2 { text-align: center; color: #1e293b; font-weight: 600; }
         label { display: block; font-weight: 600; margin-bottom: 5px; font-size: 14px; color: #475569; }
-        select, input[type="text"], input[type="password"], textarea {
-            width: 100%;
-            padding: 9px;
-            box-sizing: border-box;
-            border: 1px solid #cbd5e1;
-            border-radius: 6px;
-            margin-bottom: 6px;
-            background: #ffffff;
-            font-size: 14px;
-            color: #334155;
-        }
-        button {
-            background-color: #3b82f6;
-            color: white;
-            border: none;
-            padding: 9px 14px;
-            font-size: 14px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 500;
-            transition: background-color 0.2s;
-        }
+        select, input[type="text"], input[type="password"] { width: 100%; padding: 9px; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 6px; margin-bottom: 6px; font-size: 14px; }
+        button { background-color: #3b82f6; color: white; border: none; padding: 9px 14px; font-size: 14px; border-radius: 6px; cursor: pointer; font-weight: 500; }
         button:hover { background-color: #2563eb; }
-        .add-task-btn {
-            background-color: #10b981;
-            padding: 5px 10px;
-            font-size: 12px;
-            margin-top: 6px;
-        }
-        .add-task-btn:hover { background-color: #059669; }
-        .remove-slot-btn {
-            background-color: #ef4444;
-            padding: 7px 11px;
-            font-size: 14px;
-        }
-        .remove-slot-btn:hover { background-color: #dc2626; }
-        .delete-btn {
-            background-color: #ef4444;
-            padding: 4px 8px;
-            font-size: 12px;
-            margin-left: 10px;
-        }
-        .delete-btn:hover { background-color: #dc2626; }
-        .task-list-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: #ffffff;
-            padding: 8px 12px;
-            border: 1px solid #e2e8f0;
-            margin-bottom: 6px;
-            border-radius: 6px;
-        }
-        .task-row {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-            margin-bottom: 6px;
-        }
-        
-        details {
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            margin-bottom: 12px;
-            padding: 12px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
-        }
-        summary {
-            font-weight: 600;
-            color: #1e293b;
-            cursor: pointer;
-            font-size: 16px;
-            outline: none;
-        }
-        summary:hover { color: #3b82f6; }
-        .day-content {
-            margin-top: 12px;
-            padding-top: 12px;
-            border-top: 1px dashed #e2e8f0;
-        }
-
-        .child-view-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 6px;
-            background: #fff;
-        }
-        .child-view-table th, .child-view-table td {
-            border: 1px solid #f1f5f9;
-            padding: 10px 12px;
-            text-align: left;
-        }
+        .add-task-btn { background-color: #10b981; padding: 5px 10px; font-size: 12px; margin-top: 6px; }
+        .remove-slot-btn { background-color: #ef4444; padding: 7px 11px; font-size: 14px; }
+        .delete-btn { background-color: #ef4444; padding: 4px 8px; font-size: 12px; margin-left: 10px; }
+        .task-list-item { display: flex; justify-content: space-between; align-items: center; background: #ffffff; padding: 8px 12px; border: 1px solid #e2e8f0; margin-bottom: 6px; border-radius: 6px; }
+        .task-row { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; }
+        details { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 12px; padding: 12px; }
+        summary { font-weight: 600; color: #1e293b; cursor: pointer; font-size: 16px; outline: none; }
+        .day-content { margin-top: 12px; padding-top: 12px; border-top: 1px dashed #e2e8f0; }
+        .child-view-table { width: 100%; border-collapse: collapse; margin-top: 6px; background: #fff; }
+        .child-view-table td { border: 1px solid #f1f5f9; padding: 10px 12px; text-align: left; }
         .task-cell { width: 100%; font-size: 15px; color: #334155; }
         .task-cell input { margin-right: 10px; width: 18px; height: 18px; cursor: pointer; vertical-align: middle; accent-color: #3b82f6; }
         tr.done { background-color: #f1f5f9; color: #94a3b8; text-decoration: line-through; }
-        
-        .admin-panel {
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            padding: 18px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-        .sync-status {
-            font-size: 12px;
-            color: #059669;
-            margin-top: 5px;
-            font-weight: 600;
-        }
+        .admin-panel { background: #f8fafc; border: 1px solid #e2e8f0; padding: 18px; border-radius: 8px; margin-bottom: 20px; }
+        .sync-status { font-size: 12px; color: #059669; margin-top: 5px; font-weight: 600; }
     </style>
 </head>
 <body>
@@ -136,21 +35,21 @@
     <!-- ADMIN-BEREICH -->
     <div class="admin-panel" id="adminPanel">
         <h3>⚙️ Admin-Modus</h3>
-        <p style="font-size: 13px; color: #64748b;">Bitte PIN eingeben, um Aufgaben zu verwalten und den Wochenplan zu bearbeiten:</p>
+        <p style="font-size: 13px; color: #64748b;">Bitte PIN eingeben:</p>
         <div id="loginBox" style="display: flex; gap: 10px; max-width: 300px;">
             <input type="password" id="adminPin" placeholder="PIN eingeben..." maxlength="4">
             <button onclick="checkAdminLogin()" style="margin-top: 0;">Entsperren</button>
         </div>
 
         <div id="editArea" style="display: none; margin-top: 15px;">
-            <label>Name des Kindes für diesen Plan:</label>
-            <input type="text" id="childNameInput" value="Oliver" oninput="saveAndSyncData()">
+            <label>Name des Kindes:</label>
+            <input type="text" id="childNameInput" value="Oliver" oninput="saveAdminChanges()">
             
             <div style="background: #ffffff; border: 1px solid #e2e8f0; padding: 12px; margin-top: 15px; border-radius: 6px;">
-                <h4 style="margin-top: 0; color: #1e293b;">Aufgaben-Liste erweitern & bearbeiten</h4>
+                <h4 style="margin-top: 0; color: #1e293b;">Aufgaben-Liste verwalten</h4>
                 <div style="display: flex; gap: 10px;">
-                    <input type="text" id="neueAufgabeInput" placeholder="Neue Aufgabe eingeben...">
-                    <button onclick="aufgabeHinzufuegen()" style="margin-top: 0; white-space: nowrap;">Hinzufügen</button>
+                    <input type="text" id="neueAufgabeInput" placeholder="Neue Aufgabe...">
+                    <button onclick="aufgabeHinzufuegen()" style="margin-top: 0;">Hinzufügen</button>
                 </div>
                 <div id="aufgabenListeContainer" style="max-height: 120px; overflow-y: auto; margin-top: 10px;"></div>
             </div>
@@ -159,7 +58,14 @@
             <div id="builderContainer"></div>
             
             <div id="syncStatus" class="sync-status">☁️ Cloud-Status: Bereit</div>
-            <button onclick="lockAdminMode()" style="background-color: #f97316; margin-top: 15px; width: 100%;">🔒 Bearbeiten beenden & Ansicht sperren</button>
+
+            <div style="background: #e0f2fe; border: 1px solid #7dd3fc; padding: 12px; margin-top: 15px; border-radius: 6px;">
+                <h4 style="margin-top: 0; color: #0369a1; margin-bottom: 5px;">🔑 WICHTIG FÜR GITHUB</h4>
+                <p style="font-size: 13px; color: #0c4a6e; margin-top: 0;">Trage diese ID genau einmal oben im HTML-Code bei GitHub ein, um PC und Handys für immer zu verknüpfen:</p>
+                <code id="cloudIdDisplay" style="font-size: 16px; color: #0ea5e9; font-weight: bold;">Wird beim ersten Ändern generiert...</code>
+            </div>
+
+            <button onclick="lockAdminMode()" style="background-color: #f97316; margin-top: 15px; width: 100%;">🔒 Bearbeiten beenden</button>
         </div>
     </div>
 
@@ -168,47 +74,86 @@
 
     <script>
         const MASTER_PIN = "1985";
+        
+        // 🔥 HIER TRÄGST DU DIE ID EIN, SOBALD DU SIE AUF DEM HANDY GESEHEN HAST!
+        // Zum Beispiel: const GEMEINSAME_CLOUD_ID = "61abcd12345";
+        const GEMEINSAME_CLOUD_ID = ""; 
+
         const wochentage = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"];
         
-        // Fester Online-Speicher Endpoint (Wird beim ersten Admin-Start automatisch erstellt falls leer)
-        let cloudBinId = localStorage.getItem('oliver_cloud_bin_id') || "";
-        
-        let localData = {
+        let localData = JSON.parse(localStorage.getItem('lokales_backup_oliver')) || {
             child_name: "Oliver",
             shared_aufgaben: ["Spülmaschine", "Schulrucksack aufräumen", "Zimmer aufräumen", "Duschen", "Lernzeit", "Tisch decken"],
             tasks: {},
             checkboxes: {}
         };
 
+        // Entweder die feste GitHub ID oder die lokal generierte (für den ersten Test)
+        let activeCloudId = GEMEINSAME_CLOUD_ID || localStorage.getItem('erstellte_cloud_id') || "";
+
         async function initApp() {
-            await loadDataFromCloud();
+            if (activeCloudId) {
+                await loadDataFromCloud();
+            }
             renderAufgabenManager();
             renderBuilder();
             renderPublicView();
         }
 
         async function loadDataFromCloud() {
-            if (!cloudBinId) return; // Noch kein Online-Speicher konfiguriert
             try {
-                let response = await fetch(`https://api.npoint.io/${cloudBinId}`);
+                let response = await fetch(`https://api.npoint.io/${activeCloudId}`);
                 if (response.ok) {
                     let cloudData = await response.json();
                     if (cloudData && cloudData.child_name) {
                         localData = cloudData;
+                        localStorage.setItem('lokales_backup_oliver', JSON.stringify(localData));
                     }
                 }
             } catch (e) {
-                console.log("Konnte Daten nicht laden, nutze lokale Zwischenversion.");
+                console.log("Offline oder Ladefehler - nutze lokales Backup");
             }
         }
 
-        async function saveAndSyncData() {
+        async function syncToCloud() {
             let statusEl = document.getElementById('syncStatus');
-            if (statusEl) statusEl.innerText = "☁️ Speichert in Cloud...";
+            let idDisplay = document.getElementById('cloudIdDisplay');
+            if (statusEl) statusEl.innerText = "☁️ Speichert...";
 
-            // Daten aus UI einsammeln
+            // 1. IMMER SOFORT LOKAL SPEICHERN (Narrensicher)
+            localStorage.setItem('lokales_backup_oliver', JSON.stringify(localData));
+
+            // 2. IN DIE CLOUD SCHIEBEN
+            try {
+                if (!activeCloudId) {
+                    // Neuen Speicherplatz generieren
+                    let createRes = await fetch('https://api.npoint.io', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(localData)
+                    });
+                    let createJson = await createRes.json();
+                    if (createJson && createJson.id) {
+                        activeCloudId = createJson.id;
+                        localStorage.setItem('erstellte_cloud_id', activeCloudId);
+                    }
+                } else {
+                    // Bestehenden Speicherplatz updaten
+                    await fetch(`https://api.npoint.io/${activeCloudId}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(localData)
+                    });
+                }
+                if (statusEl) statusEl.innerText = "✅ Live & Lokal gespeichert!";
+                if (idDisplay) idDisplay.innerText = activeCloudId;
+            } catch (e) {
+                if (statusEl) statusEl.innerText = "⚠️ Nur lokal gespeichert (Cloud-Fehler)";
+            }
+        }
+
+        async function saveAdminChanges() {
             localData.child_name = document.getElementById('childNameInput').value || "Oliver";
-            
             wochentage.forEach(tag => {
                 const slotsContainer = document.getElementById('builder_slots_' + tag);
                 if (slotsContainer) {
@@ -218,43 +163,15 @@
                     localData.tasks[tag] = tasks;
                 }
             });
-
-            try {
-                if (!cloudBinId) {
-                    // Erstelle neuen npoint.io Bin beim ersten Speichern
-                    let createRes = await fetch('https://api.npoint.io', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(localData)
-                    });
-                    let createJson = await createRes.json();
-                    if (createJson && createJson.id) {
-                        cloudBinId = createJson.id;
-                        localStorage.setItem('oliver_cloud_bin_id', cloudBinId);
-                    }
-                } else {
-                    // Bestehenden npoint.io Bin aktualisieren
-                    await fetch(`https://api.npoint.io/${cloudBinId}`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(localData)
-                    });
-                }
-                if (statusEl) statusEl.innerText = "✅ Live aktualisiert & gespeichert!";
-            } catch (e) {
-                if (statusEl) statusEl.innerText = "⚠️ Offline gespeichert (wird synchronisiert)";
-            }
             renderPublicView();
+            await syncToCloud();
         }
 
-        async function checkAdminLogin() {
-            let pin = document.getElementById('adminPin').value;
-            if (pin === MASTER_PIN) {
+        function checkAdminLogin() {
+            if (document.getElementById('adminPin').value === MASTER_PIN) {
                 document.getElementById('loginBox').style.display = 'none';
                 document.getElementById('editArea').style.display = 'block';
-                await loadDataFromCloud();
-                renderAufgabenManager();
-                renderBuilder();
+                if (activeCloudId) document.getElementById('cloudIdDisplay').innerText = activeCloudId;
             } else {
                 alert("Falscher PIN!");
                 document.getElementById('adminPin').value = '';
@@ -265,7 +182,6 @@
             document.getElementById('loginBox').style.display = 'flex';
             document.getElementById('editArea').style.display = 'none';
             document.getElementById('adminPin').value = '';
-            renderPublicView();
         }
 
         function renderAufgabenManager() {
@@ -279,7 +195,7 @@
             });
         }
 
-        function aufgabeHinzufuegen() {
+        async function aufgabeHinzufuegen() {
             const input = document.getElementById('neueAufgabeInput');
             const val = input.value.trim();
             if (val && localData.shared_aufgaben.indexOf(val) === -1) {
@@ -287,17 +203,15 @@
                 input.value = '';
                 renderAufgabenManager();
                 renderBuilder();
-                saveAndSyncData();
-            } else {
-                alert("Bitte eine gültige, neue Aufgabe eingeben.");
+                await syncToCloud();
             }
         }
 
-        function aufgabeLoeschen(index) {
+        async function aufgabeLoeschen(index) {
             localData.shared_aufgaben.splice(index, 1);
             renderAufgabenManager();
             renderBuilder();
-            saveAndSyncData();
+            await syncToCloud();
         }
 
         function renderBuilder() {
@@ -306,8 +220,7 @@
             wochentage.forEach(function(tag) {
                 let details = document.createElement('details');
                 details.innerHTML = '<summary>📅 ' + tag + '</summary>' +
-                                    '<div class="day-content" id="builder_slots_' + tag + '">' +
-                                    '</div>' +
+                                    '<div class="day-content" id="builder_slots_' + tag + '"></div>' +
                                     '<button type="button" class="add-task-btn" onclick="addSlot(\'' + tag + '\')">+ Aufgabe hinzufügen</button>';
                 container.appendChild(details);
             });
@@ -316,11 +229,8 @@
                 let savedTasks = localData.tasks[tag] || [""];
                 let slotsContainer = document.getElementById('builder_slots_' + tag);
                 slotsContainer.innerHTML = '';
-                savedTasks.forEach(function(val, idx) {
-                    slotsContainer.innerHTML += createSlotHtml(tag, val);
-                });
+                savedTasks.forEach(val => { slotsContainer.innerHTML += createSlotHtml(tag, val); });
             });
-
             document.getElementById('childNameInput').value = localData.child_name || "Oliver";
             document.getElementById('pageTitle').innerText = "📋 Wochenplan für " + (localData.child_name || "Oliver");
         }
@@ -331,11 +241,8 @@
                 let sel = (a === selectedVal) ? ' selected' : '';
                 optionsHtml += '<option value="' + a + '"' + sel + '>' + a + '</option>';
             });
-
-            return '<div class="task-row">' +
-                   '<select onchange="saveAndSyncData()"> ' + optionsHtml + '</select>' +
-                   '<button type="button" class="remove-slot-btn" onclick="removeSlot(this, \'' + tag + '\')">X</button>' +
-                   '</div>';
+            return '<div class="task-row"><select onchange="saveAdminChanges()"> ' + optionsHtml + '</select>' +
+                   '<button type="button" class="remove-slot-btn" onclick="removeSlot(this)">X</button></div>';
         }
 
         function addSlot(tag) {
@@ -344,71 +251,52 @@
             let currentValues = [];
             selects.forEach(s => currentValues.push(s.value));
             currentValues.push("");
-            
             let html = '';
-            currentValues.forEach(val => {
-                html += createSlotHtml(tag, val);
-            });
+            currentValues.forEach(val => { html += createSlotHtml(tag, val); });
             slotsContainer.innerHTML = html;
-            saveAndSyncData();
+            saveAdminChanges();
         }
 
-        function removeSlot(btn, tag) {
+        function removeSlot(btn) {
             const row = btn.parentElement;
-            const slotsContainer = row.parentElement;
-            if (slotsContainer.children.length > 1) {
+            if (row.parentElement.children.length > 1) {
                 row.remove();
-                saveAndSyncData();
+                saveAdminChanges();
             } else {
                 alert("Mindestens ein Feld pro Tag beibehalten.");
             }
         }
 
         async function renderPublicView() {
-            // Regelmäßig im Hintergrund frische Daten von der Cloud holen falls online
-            await loadDataFromCloud();
-
             const container = document.getElementById('publicViewContainer');
             let childName = localData.child_name || "Oliver";
-            
             document.getElementById('pageTitle').innerText = "📋 Wochenplan für " + childName;
 
             let html = '<h3 style="color: #1e293b; border-bottom: 2px solid #3b82f6; padding-bottom: 5px;">Wochenplan für ' + childName + '</h3>';
-            html += '<p style="font-size: 13px; color: #64748b;">Klicke auf einen Wochentag, um ihn aufzuklappen, und hake deine erledigten Aufgaben ab!</p>';
 
             wochentage.forEach(function(tag) {
                 let tasks = localData.tasks[tag] || [];
                 if (tasks.length === 0) tasks = ["Keine Aufgaben für heute"];
 
-                html += '<details open><summary>📅 ' + tag + '</summary><div class="day-content">';
-                html += '<table class="child-view-table"><tbody>';
+                html += '<details open><summary>📅 ' + tag + '</summary><div class="day-content"><table class="child-view-table"><tbody>';
 
                 tasks.forEach(function(task, index) {
                     let uniqueId = tag + '_' + index;
-                    let taskDisplayHtml = '';
+                    let taskDisplayHtml = '<span>' + task + '</span>';
                     
                     if (task.toLowerCase() === 'lernzeit') {
-                        taskDisplayHtml = '<span>Lernzeit </span>' +
-                                          '<a href="https://petruck670-cyber.github.io/Lernapp/Lernapp.html?start=15" target="_blank" style="background:#3b82f6; color:white; padding:4px 8px; text-decoration:none; border-radius:4px; font-size:12px; margin-left:8px; display:inline-block;">🚀 Lernapp öffnen</a>';
+                        taskDisplayHtml += '<a href="https://petruck670-cyber.github.io/Lernapp/Lernapp.html?start=15" target="_blank" style="background:#3b82f6; color:white; padding:4px 8px; text-decoration:none; border-radius:4px; font-size:12px; margin-left:8px; display:inline-block;">🚀 Lernapp</a>';
                     } else if (task.toLowerCase() === 'zimmer aufräumen') {
-                        taskDisplayHtml = '<span>Zimmer aufräumen </span>' +
-                                          '<a href="https://petruck670-cyber.github.io/Zimmer/aufr%C3%A4umen.html" target="_blank" style="background:#f97316; color:white; padding:4px 8px; text-decoration:none; border-radius:4px; font-size:12px; margin-left:8px; display:inline-block;">🧹 Aufräum-App öffnen</a>';
-                    } else {
-                        taskDisplayHtml = '<span>' + task + '</span>';
+                        taskDisplayHtml += '<a href="https://petruck670-cyber.github.io/Zimmer/aufr%C3%A4umen.html" target="_blank" style="background:#f97316; color:white; padding:4px 8px; text-decoration:none; border-radius:4px; font-size:12px; margin-left:8px; display:inline-block;">🧹 Aufräum-App</a>';
                     }
 
                     let isChecked = localData.checkboxes && localData.checkboxes[uniqueId] ? 'checked' : '';
-
-                    html += '<tr id="row_' + uniqueId + '" class="' + (isChecked ? 'done' : '') + '">' +
-                            '<td class="task-cell">' +
+                    html += '<tr id="row_' + uniqueId + '" class="' + (isChecked ? 'done' : '') + '"><td class="task-cell">' +
                             '<input type="checkbox" id="' + uniqueId + '" ' + isChecked + ' onchange="toggleTask(\'' + uniqueId + '\')"> ' +
-                            taskDisplayHtml +
-                            '</td></tr>';
+                            taskDisplayHtml + '</td></tr>';
                 });
-
                 html += '</tbody></table></div></details>';
             });
-
             container.innerHTML = html;
         }
 
@@ -424,12 +312,10 @@
                 row.classList.remove("done");
                 localData.checkboxes[id] = false;
             }
-            // Auch Checkboxen sofort in der Cloud speichern, damit du sie von der Arbeit aus siehst
-            await saveAndSyncData();
+            await syncToCloud();
         }
 
         initApp();
     </script>
-
 </body>
 </html>
