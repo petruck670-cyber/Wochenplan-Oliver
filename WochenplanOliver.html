@@ -17,7 +17,7 @@
         }
         h2 { text-align: center; color: #1e293b; font-weight: 600; }
         label { display: block; font-weight: 600; margin-bottom: 5px; font-size: 14px; color: #475569; }
-        select, input[type="text"], input[type="password"], textarea {
+        select, input[type="text"], input[type="password"] {
             width: 100%;
             padding: 9px;
             box-sizing: border-box;
@@ -118,12 +118,12 @@
             border-radius: 8px;
             margin-bottom: 20px;
         }
-        .backup-panel {
-            background: #fdf8f6;
-            border: 1px solid #fed7aa;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
+        .sync-status {
+            font-size: 13px;
+            color: #059669;
+            margin-top: 10px;
+            font-weight: 600;
+            text-align: center;
         }
     </style>
 </head>
@@ -131,24 +131,10 @@
 
     <h2 id="pageTitle">📋 Wochenplan</h2>
 
-    <div class="backup-panel">
-        <details>
-            <summary style="color: #c2410c;">💾 Geheim-Tresor: Backup & WhatsApp-Sicherung 🕵️‍♂️</summary>
-            <div class="day-content">
-                <p style="font-size: 12px; color: #9a3412; margin-top: 0;">Sichere deinen Spielstand vor Updates oder stelle ihn per Geheimcode wieder her:</p>
-                <textarea id="backup-code-input" rows="3" placeholder="Sicherungscode hier einfügen..." style="font-family: monospace; font-size: 11px;"></textarea>
-                <div style="display: flex; gap: 8px; margin-top: 8px;">
-                    <button onclick="generateBackupCode()" style="background: #6366f1; flex: 1; font-size: 12px;">📤 Code kopieren</button>
-                    <button onclick="sendBackupWhatsApp()" style="background: #10b981; flex: 1; font-size: 12px;">💬 Per WhatsApp</button>
-                    <button onclick="loadBackupCode()" style="background: #f59e0b; flex: 1; font-size: 12px;">📥 Daten laden</button>
-                </div>
-            </div>
-        </details>
-    </div>
-
+    <!-- ADMIN-BEREICH -->
     <div class="admin-panel" id="adminPanel">
         <h3>⚙️ Admin-Modus</h3>
-        <p style="font-size: 13px; color: #64748b;">Bitte PIN eingeben, um Aufgaben zu verwalten und den Wochenplan zu bearbeiten:</p>
+        <p style="font-size: 13px; color: #64748b;">Bitte PIN eingeben, um den Wochenplan live zu verwalten:</p>
         <div id="loginBox" style="display: flex; gap: 10px; max-width: 300px;">
             <input type="password" id="adminPin" placeholder="PIN eingeben..." maxlength="4">
             <button onclick="checkAdminLogin()" style="margin-top: 0;">Entsperren</button>
@@ -156,7 +142,7 @@
 
         <div id="editArea" style="display: none; margin-top: 15px;">
             <label>Name des Kindes für diesen Plan:</label>
-            <input type="text" id="childNameInput" value="Oliver" oninput="saveChildName()">
+            <input type="text" id="childNameInput" value="Oliver" oninput="saveAdminChanges()">
             
             <div style="background: #ffffff; border: 1px solid #e2e8f0; padding: 12px; margin-top: 15px; border-radius: 6px;">
                 <h4 style="margin-top: 0; color: #1e293b;">Aufgaben-Liste erweitern & bearbeiten</h4>
@@ -170,24 +156,112 @@
             <h4 style="margin: 15px 0 5px 0; color: #1e293b;">Wochentage belegen:</h4>
             <div id="builderContainer"></div>
             
+            <div id="syncStatus" class="sync-status">☁️ Cloud-Status: Bereit</div>
+
             <button onclick="lockAdminMode()" style="background-color: #f97316; margin-top: 15px; width: 100%;">🔒 Bearbeiten beenden & Ansicht sperren</button>
         </div>
     </div>
 
+    <!-- ANSICHT FÜR DAS KIND -->
     <div id="publicViewContainer"></div>
 
     <script>
         const MASTER_PIN = "1985";
+        const JSONBIN_KEY = "$2a$10$y5482CAg1LDcJ2UVgxWaaesC/f.yWYS7hyx6QNvUz6H5A9kdjKtLa";
+        
         const wochentage = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"];
         
-        let aufgabenListe = JSON.parse(localStorage.getItem('shared_aufgaben')) || [
-            "Spülmaschine", "Schulrucksack aufräumen", "Zimmer aufräumen", "Duschen", "Lernzeit", "Tisch decken"
-        ];
+        let localData = {
+            child_name: "Oliver",
+            shared_aufgaben: ["Spülmaschine", "Schulrucksack aufräumen", "Zimmer aufräumen", "Duschen", "Lernzeit", "Tisch decken"],
+            tasks: {},
+            checkboxes: {}
+        };
 
-        function initApp() {
+        async function initApp() {
+            await loadDataFromCloud();
             renderAufgabenManager();
             renderBuilder();
             renderPublicView();
+        }
+
+        async function loadDataFromCloud() {
+            let binId = localStorage.getItem('jsonbin_oliver_id');
+            if (!binId) return;
+            try {
+                let response = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
+                    headers: { 'X-Master-Key': JSONBIN_KEY }
+                });
+                if (response.ok) {
+                    let json = await response.json();
+                    if (json && json.record && json.record.child_name) {
+                        localData = json.record;
+                    }
+                }
+            } catch (e) {
+                console.log("Ladefehler aus Cloud");
+            }
+        }
+
+        async function syncToCloud() {
+            let statusEl = document.getElementById('syncStatus');
+            if (statusEl) statusEl.innerText = "☁️ Speichert in Cloud...";
+
+            let binId = localStorage.getItem('jsonbin_oliver_id');
+
+            try {
+                if (!binId) {
+                    // Ersten Bin automatisch erstellen, wenn noch keiner existiert
+                    let createResp = await fetch('https://api.jsonbin.io/v3/b', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Master-Key': JSONBIN_KEY,
+                            'X-Bin-Name': 'Wochenplan_Oliver'
+                        },
+                        body: JSON.stringify(localData)
+                    });
+                    if (createResp.ok) {
+                        let createJson = await createResp.json();
+                        binId = createJson.metadata.id;
+                        localStorage.setItem('jsonbin_oliver_id', binId);
+                        if (statusEl) statusEl.innerText = "✅ Cloud-Speicher erfolgreich eingerichtet!";
+                        return;
+                    }
+                }
+
+                // Normales Update bestehender Daten
+                let response = await fetch(`https://api.jsonbin.io/v3/b/${binId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Master-Key': JSONBIN_KEY
+                    },
+                    body: JSON.stringify(localData)
+                });
+                if (response.ok) {
+                    if (statusEl) statusEl.innerText = "✅ Live aktualisiert & gespeichert!";
+                } else {
+                    if (statusEl) statusEl.innerText = "❌ Fehler beim Speichern zur Cloud";
+                }
+            } catch (e) {
+                if (statusEl) statusEl.innerText = "❌ Netzwerkfehler bei Cloud";
+            }
+        }
+
+        async function saveAdminChanges() {
+            localData.child_name = document.getElementById('childNameInput').value || "Oliver";
+            wochentage.forEach(tag => {
+                const slotsContainer = document.getElementById('builder_slots_' + tag);
+                if (slotsContainer) {
+                    const selects = slotsContainer.querySelectorAll('select');
+                    let tasks = [];
+                    selects.forEach(sel => { if (sel.value) tasks.push(sel.value); });
+                    localData.tasks[tag] = tasks;
+                }
+            });
+            renderPublicView();
+            await syncToCloud();
         }
 
         function checkAdminLogin() {
@@ -208,144 +282,69 @@
             renderPublicView();
         }
 
-        function saveChildName() {
-            let name = document.getElementById('childNameInput').value || "Kind";
-            localStorage.setItem('plan_child_name', name);
-            document.getElementById('pageTitle').innerText = "📋 Wochenplan für " + name;
-        }
-
-        function getBackupJSONString() {
-            let backupData = {
-                child_name: localStorage.getItem('plan_child_name'),
-                shared_aufgaben: localStorage.getItem('shared_aufgaben')
-            };
-            wochentage.forEach(tag => {
-                backupData['plan_tasks_' + tag] = localStorage.getItem('plan_tasks_' + tag);
-            });
-            for (let i = 0; i < localStorage.length; i++) {
-                let key = localStorage.key(i);
-                if (key && key.startsWith('task_')) {
-                    backupData[key] = localStorage.getItem(key);
-                }
-            }
-            return btoa(encodeURIComponent(JSON.stringify(backupData)));
-        }
-
-        function generateBackupCode() {
-            let code = getBackupJSONString();
-            let textarea = document.getElementById('backup-code-input');
-            textarea.value = code;
-            textarea.select();
-            try {
-                navigator.clipboard.writeText(code);
-                alert("🕵️‍♂️ Geheim-Code erfolgreich in die Zwischenablage kopiert!");
-            } catch (e) {
-                alert("Code generiert! Bitte aus dem Textfeld kopieren.");
-            }
-        }
-
-        function sendBackupWhatsApp() {
-            let code = getBackupJSONString();
-            document.getElementById('backup-code-input').value = code;
-            let childName = localStorage.getItem('plan_child_name') || "Oliver";
-            let message = encodeURIComponent(`🕵️‍♂️ Wochenplan-Backup (${childName}):\n\n` + code);
-            window.open(`https://api.whatsapp.com/send?text=${message}`, '_blank');
-        }
-
-        function loadBackupCode() {
-            let code = document.getElementById('backup-code-input').value.trim();
-            if (!code) {
-                alert("Bitte zuerst einen Code einfügen!");
-                return;
-            }
-            try {
-                let jsonStr = decodeURIComponent(atob(code));
-                let data = JSON.parse(jsonStr);
-
-                if (data.child_name) localStorage.setItem('plan_child_name', data.child_name);
-                if (data.shared_aufgaben) localStorage.setItem('shared_aufgaben', data.shared_aufgaben);
-                
-                wochentage.forEach(tag => {
-                    if (data['plan_tasks_' + tag]) localStorage.setItem('plan_tasks_' + tag, data['plan_tasks_' + tag]);
-                });
-
-                Object.keys(data).forEach(key => {
-                    if (key.startsWith('task_')) {
-                        localStorage.setItem(key, data[key]);
-                    }
-                });
-
-                alert("🎉 Daten erfolgreich aus dem Tresor wiederhergestellt!");
-                location.reload();
-            } catch (e) {
-                alert("❌ Ungültiger Code! Wiederherstellung fehlgeschlagen.");
-            }
-        }
-
         function renderAufgabenManager() {
             const container = document.getElementById('aufgabenListeContainer');
             container.innerHTML = '';
-            aufgabenListe.forEach(function(aufgabe, index) {
+            localData.shared_aufgaben.forEach(function(aufgabe, index) {
                 let item = document.createElement('div');
                 item.className = 'task-list-item';
                 item.innerHTML = '<span>' + aufgabe + '</span><button class="delete-btn" onclick="aufgabeLoeschen(' + index + ')">Löschen</button>';
                 container.appendChild(item);
             });
-            localStorage.setItem('shared_aufgaben', JSON.stringify(aufgabenListe));
         }
 
-        function aufgabeHinzufuegen() {
+        async function aufgabeHinzufuegen() {
             const input = document.getElementById('neueAufgabeInput');
             const val = input.value.trim();
-            if (val && aufgabenListe.indexOf(val) === -1) {
-                aufgabenListe.push(val);
+            if (val && localData.shared_aufgaben.indexOf(val) === -1) {
+                localData.shared_aufgaben.push(val);
                 input.value = '';
-                initApp();
+                renderAufgabenManager();
+                renderBuilder();
+                await syncToCloud();
             } else {
                 alert("Bitte eine gültige, neue Aufgabe eingeben.");
             }
         }
 
-        function aufgabeLoeschen(index) {
-            aufgabenListe.splice(index, 1);
-            initApp();
+        async function aufgabeLoeschen(index) {
+            localData.shared_aufgaben.splice(index, 1);
+            renderAufgabenManager();
+            renderBuilder();
+            await syncToCloud();
         }
 
         function renderBuilder() {
             const container = document.getElementById('builderContainer');
-            if (container.children.length === 0) {
-                wochentage.forEach(function(tag) {
-                    let details = document.createElement('details');
-                    details.innerHTML = '<summary>📅 ' + tag + '</summary>' +
-                                        '<div class="day-content" id="builder_slots_' + tag + '">' +
-                                        '</div>' +
-                                        '<button type="button" class="add-task-btn" onclick="addSlot(\'' + tag + '\')">+ Aufgabe hinzufügen</button>';
-                    container.appendChild(details);
-                });
-            }
+            container.innerHTML = '';
             wochentage.forEach(function(tag) {
-                let savedTasks = JSON.parse(localStorage.getItem('plan_tasks_' + tag)) || [""];
-                let slotsContainer = document.getElementById('builder_slots_' + tag);
-                slotsContainer.innerHTML = '';
-                savedTasks.forEach(function(val, idx) {
-                    slotsContainer.innerHTML += createSlotHtml(tag, idx + 1, val);
-                });
+                let details = document.createElement('details');
+                details.innerHTML = '<summary>📅 ' + tag + '</summary>' +
+                                    '<div class="day-content" id="builder_slots_' + tag + '"></div>' +
+                                    '<button type="button" class="add-task-btn" onclick="addSlot(\'' + tag + '\')">+ Aufgabe hinzufügen</button>';
+                container.appendChild(details);
             });
 
-            let savedName = localStorage.getItem('plan_child_name') || "Oliver";
-            document.getElementById('childNameInput').value = savedName;
-            document.getElementById('pageTitle').innerText = "📋 Wochenplan für " + savedName;
+            wochentage.forEach(function(tag) {
+                let savedTasks = localData.tasks[tag] || [""];
+                let slotsContainer = document.getElementById('builder_slots_' + tag);
+                slotsContainer.innerHTML = '';
+                savedTasks.forEach(val => { slotsContainer.innerHTML += createSlotHtml(tag, val); });
+            });
+
+            document.getElementById('childNameInput').value = localData.child_name || "Oliver";
+            document.getElementById('pageTitle').innerText = "📋 Wochenplan für " + (localData.child_name || "Oliver");
         }
 
-        function createSlotHtml(tag, index, selectedVal) {
+        function createSlotHtml(tag, selectedVal) {
             let optionsHtml = '<option value="">-- Aufgabe wählen --</option>';
-            aufgabenListe.forEach(function(a) {
+            localData.shared_aufgaben.forEach(function(a) {
                 let sel = (a === selectedVal) ? ' selected' : '';
                 optionsHtml += '<option value="' + a + '"' + sel + '>' + a + '</option>';
             });
 
             return '<div class="task-row">' +
-                   '<select onchange="saveBuilderData()"> ' + optionsHtml + '</select>' +
+                   '<select onchange="saveAdminChanges()"> ' + optionsHtml + '</select>' +
                    '<button type="button" class="remove-slot-btn" onclick="removeSlot(this)">X</button>' +
                    '</div>';
         }
@@ -354,59 +353,43 @@
             const slotsContainer = document.getElementById('builder_slots_' + tag);
             let selects = slotsContainer.querySelectorAll('select');
             let currentValues = [];
-            selects.forEach(function(s) { currentValues.push(s.value); });
+            selects.forEach(s => currentValues.push(s.value));
             currentValues.push("");
             
             let html = '';
-            currentValues.forEach(function(val, idx) {
-                html += createSlotHtml(tag, idx + 1, val);
-            });
+            currentValues.forEach(val => { html += createSlotHtml(tag, val); });
             slotsContainer.innerHTML = html;
-            saveBuilderData();
+            saveAdminChanges();
         }
 
         function removeSlot(btn) {
             const row = btn.parentElement;
-            const slotsContainer = row.parentElement;
-            if (slotsContainer.children.length > 1) {
+            if (row.parentElement.children.length > 1) {
                 row.remove();
-                saveBuilderData();
+                saveAdminChanges();
             } else {
                 alert("Mindestens ein Feld pro Tag beibehalten.");
             }
         }
 
-        function saveBuilderData() {
-            wochentage.forEach(function(tag) {
-                const slotsContainer = document.getElementById('builder_slots_' + tag);
-                if (slotsContainer) {
-                    const selects = slotsContainer.querySelectorAll('select');
-                    let tasks = [];
-                    selects.forEach(function(sel) {
-                        if (sel.value) tasks.push(sel.value);
-                    });
-                    localStorage.setItem('plan_tasks_' + tag, JSON.stringify(tasks));
-                }
-            });
-            renderPublicView();
-        }
-
-        function renderPublicView() {
+        async function renderPublicView() {
+            await loadDataFromCloud();
             const container = document.getElementById('publicViewContainer');
-            let childName = localStorage.getItem('plan_child_name') || "Oliver";
-            
+            let childName = localData.child_name || "Oliver";
+            document.getElementById('pageTitle').innerText = "📋 Wochenplan für " + childName;
+
             let html = '<h3 style="color: #1e293b; border-bottom: 2px solid #3b82f6; padding-bottom: 5px;">Wochenplan für ' + childName + '</h3>';
             html += '<p style="font-size: 13px; color: #64748b;">Klicke auf einen Wochentag, um ihn aufzuklappen, und hake deine erledigten Aufgaben ab!</p>';
 
             wochentage.forEach(function(tag) {
-                let tasks = JSON.parse(localStorage.getItem('plan_tasks_' + tag)) || [];
+                let tasks = localData.tasks[tag] || [];
                 if (tasks.length === 0) tasks = ["Keine Aufgaben für heute"];
 
                 html += '<details open><summary>📅 ' + tag + '</summary><div class="day-content">';
                 html += '<table class="child-view-table"><tbody>';
 
                 tasks.forEach(function(task, index) {
-                    let uniqueId = 'task_' + tag + '_' + index;
+                    let uniqueId = tag + '_' + index;
                     let taskDisplayHtml = '';
                     
                     if (task.toLowerCase() === 'lernzeit') {
@@ -419,9 +402,12 @@
                         taskDisplayHtml = '<span>' + task + '</span>';
                     }
 
-                    html += '<tr id="row_' + uniqueId + '">' +
+                    let isChecked = localData.checkboxes && localData.checkboxes[uniqueId] ? 'checked' : '';
+                    let rowClass = isChecked ? 'done' : '';
+
+                    html += '<tr id="row_' + uniqueId + '" class="' + rowClass + '">' +
                             '<td class="task-cell">' +
-                            '<input type="checkbox" id="' + uniqueId + '" onchange="toggleTask(\'' + uniqueId + '\')"> ' +
+                            '<input type="checkbox" id="' + uniqueId + '" ' + isChecked + ' onchange="toggleTask(\'' + uniqueId + '\')"> ' +
                             taskDisplayHtml +
                             '</td></tr>';
                 });
@@ -430,30 +416,22 @@
             });
 
             container.innerHTML = html;
-
-            setTimeout(function() {
-                let checkboxes = container.querySelectorAll("input[type='checkbox']");
-                checkboxes.forEach(function(cb) {
-                    let savedState = localStorage.getItem(cb.id);
-                    if (savedState === "true") {
-                        cb.checked = true;
-                        let row = document.getElementById("row_" + cb.id);
-                        if (row) row.classList.add("done");
-                    }
-                });
-            }, 50);
         }
 
-        function toggleTask(id) {
+        async function toggleTask(id) {
             let cb = document.getElementById(id);
             let row = document.getElementById("row_" + id);
+            
+            if (!localData.checkboxes) localData.checkboxes = {};
+
             if (cb.checked) {
                 row.classList.add("done");
-                localStorage.setItem(id, "true");
+                localData.checkboxes[id] = true;
             } else {
                 row.classList.remove("done");
-                localStorage.setItem(id, "false");
+                localData.checkboxes[id] = false;
             }
+            await syncToCloud();
         }
 
         initApp();
