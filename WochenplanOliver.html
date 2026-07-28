@@ -12,7 +12,7 @@
         button { background-color: #3b82f6; color: white; border: none; padding: 9px 14px; font-size: 14px; border-radius: 6px; cursor: pointer; font-weight: 500; }
         button:hover { background-color: #2563eb; }
         .add-task-btn { background-color: #10b981; padding: 5px 10px; font-size: 12px; margin-top: 6px; }
-        .remove-slot-btn { background-color: #ef4444; padding: 7px 11px; font-size: 14px; }
+        .remove-slot-btn { background-color: #ef4444; padding: 7px 11px; font-size: JSONID; }
         .delete-btn { background-color: #ef4444; padding: 4px 8px; font-size: 12px; margin-left: 10px; }
         .task-list-item { display: flex; justify-content: space-between; align-items: center; background: #ffffff; padding: 8px 12px; border: 1px solid #e2e8f0; margin-bottom: 6px; border-radius: 6px; }
         .task-row { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; }
@@ -59,12 +59,6 @@
             
             <div id="syncStatus" class="sync-status">☁️ Cloud-Status: Bereit</div>
 
-            <div style="background: #e0f2fe; border: 1px solid #7dd3fc; padding: 12px; margin-top: 15px; border-radius: 6px;">
-                <h4 style="margin-top: 0; color: #0369a1; margin-bottom: 5px;">🔑 WICHTIG FÜR GITHUB</h4>
-                <p style="font-size: 13px; color: #0c4a6e; margin-top: 0;">Trage diese ID genau einmal oben im HTML-Code bei GitHub ein, um PC und Handys für immer zu verknüpfen:</p>
-                <code id="cloudIdDisplay" style="font-size: 16px; color: #0ea5e9; font-weight: bold;">Wird beim ersten Ändern generiert...</code>
-            </div>
-
             <button onclick="lockAdminMode()" style="background-color: #f97316; margin-top: 15px; width: 100%;">🔒 Bearbeiten beenden</button>
         </div>
     </div>
@@ -75,9 +69,8 @@
     <script>
         const MASTER_PIN = "1985";
         
-        // 🔥 HIER TRÄGST DU DIE ID EIN, SOBALD DU SIE AUF DEM HANDY GESEHEN HAST!
-        // Zum Beispiel: const GEMEINSAME_CLOUD_ID = "61abcd12345";
-        const GEMEINSAME_CLOUD_ID = ""; 
+        // Fester, eindeutiger Speicher-Link für Olivers Wochenplan
+        const STORAGE_URL = "https://api.npoint.io/oliver_wochenplan_v1";
 
         const wochentage = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"];
         
@@ -88,13 +81,8 @@
             checkboxes: {}
         };
 
-        // Entweder die feste GitHub ID oder die lokal generierte (für den ersten Test)
-        let activeCloudId = GEMEINSAME_CLOUD_ID || localStorage.getItem('erstellte_cloud_id') || "";
-
         async function initApp() {
-            if (activeCloudId) {
-                await loadDataFromCloud();
-            }
+            await loadDataFromCloud();
             renderAufgabenManager();
             renderBuilder();
             renderPublicView();
@@ -102,7 +90,7 @@
 
         async function loadDataFromCloud() {
             try {
-                let response = await fetch(`https://api.npoint.io/${activeCloudId}`);
+                let response = await fetch(STORAGE_URL);
                 if (response.ok) {
                     let cloudData = await response.json();
                     if (cloudData && cloudData.child_name) {
@@ -111,44 +99,25 @@
                     }
                 }
             } catch (e) {
-                console.log("Offline oder Ladefehler - nutze lokales Backup");
+                console.log("Nutze lokales Backup");
             }
         }
 
         async function syncToCloud() {
             let statusEl = document.getElementById('syncStatus');
-            let idDisplay = document.getElementById('cloudIdDisplay');
             if (statusEl) statusEl.innerText = "☁️ Speichert...";
 
-            // 1. IMMER SOFORT LOKAL SPEICHERN (Narrensicher)
             localStorage.setItem('lokales_backup_oliver', JSON.stringify(localData));
 
-            // 2. IN DIE CLOUD SCHIEBEN
             try {
-                if (!activeCloudId) {
-                    // Neuen Speicherplatz generieren
-                    let createRes = await fetch('https://api.npoint.io', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(localData)
-                    });
-                    let createJson = await createRes.json();
-                    if (createJson && createJson.id) {
-                        activeCloudId = createJson.id;
-                        localStorage.setItem('erstellte_cloud_id', activeCloudId);
-                    }
-                } else {
-                    // Bestehenden Speicherplatz updaten
-                    await fetch(`https://api.npoint.io/${activeCloudId}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(localData)
-                    });
-                }
-                if (statusEl) statusEl.innerText = "✅ Live & Lokal gespeichert!";
-                if (idDisplay) idDisplay.innerText = activeCloudId;
+                await fetch(STORAGE_URL, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(localData)
+                });
+                if (statusEl) statusEl.innerText = "✅ Live aktualisiert!";
             } catch (e) {
-                if (statusEl) statusEl.innerText = "⚠️ Nur lokal gespeichert (Cloud-Fehler)";
+                if (statusEl) statusEl.innerText = "⚠️ Lokal gespeichert";
             }
         }
 
@@ -171,7 +140,6 @@
             if (document.getElementById('adminPin').value === MASTER_PIN) {
                 document.getElementById('loginBox').style.display = 'none';
                 document.getElementById('editArea').style.display = 'block';
-                if (activeCloudId) document.getElementById('cloudIdDisplay').innerText = activeCloudId;
             } else {
                 alert("Falscher PIN!");
                 document.getElementById('adminPin').value = '';
@@ -268,6 +236,7 @@
         }
 
         async function renderPublicView() {
+            await loadDataFromCloud();
             const container = document.getElementById('publicViewContainer');
             let childName = localData.child_name || "Oliver";
             document.getElementById('pageTitle').innerText = "📋 Wochenplan für " + childName;
