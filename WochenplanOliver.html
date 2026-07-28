@@ -167,6 +167,7 @@
 
     <script>
         const MASTER_PIN = "1985";
+        const JSONBIN_ID = "6a6863c1f5f4af5e29cbcc07";
         const JSONBIN_KEY = "$2a$10$y5482CAg1LDcJ2UVgxWaaesC/f.yWYS7hyx6QNvUz6H5A9kdjKtLa";
         
         const wochentage = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"];
@@ -186,10 +187,8 @@
         }
 
         async function loadDataFromCloud() {
-            let binId = localStorage.getItem('jsonbin_oliver_id');
-            if (!binId) return;
             try {
-                let response = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
+                let response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_ID}/latest`, {
                     headers: { 'X-Master-Key': JSONBIN_KEY }
                 });
                 if (response.ok) {
@@ -207,31 +206,8 @@
             let statusEl = document.getElementById('syncStatus');
             if (statusEl) statusEl.innerText = "☁️ Speichert in Cloud...";
 
-            let binId = localStorage.getItem('jsonbin_oliver_id');
-
             try {
-                if (!binId) {
-                    // Ersten Bin automatisch erstellen, wenn noch keiner existiert
-                    let createResp = await fetch('https://api.jsonbin.io/v3/b', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-Master-Key': JSONBIN_KEY,
-                            'X-Bin-Name': 'Wochenplan_Oliver'
-                        },
-                        body: JSON.stringify(localData)
-                    });
-                    if (createResp.ok) {
-                        let createJson = await createResp.json();
-                        binId = createJson.metadata.id;
-                        localStorage.setItem('jsonbin_oliver_id', binId);
-                        if (statusEl) statusEl.innerText = "✅ Cloud-Speicher erfolgreich eingerichtet!";
-                        return;
-                    }
-                }
-
-                // Normales Update bestehender Daten
-                let response = await fetch(`https://api.jsonbin.io/v3/b/${binId}`, {
+                let response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_ID}`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
