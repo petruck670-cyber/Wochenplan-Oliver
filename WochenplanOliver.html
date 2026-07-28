@@ -5,51 +5,176 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Wochenplan Oliver</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc; color: #334155; max-width: 800px; margin: 20px auto; padding: 15px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8fafc;
+            color: #334155;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
         h2 { text-align: center; color: #1e293b; font-weight: 600; }
         label { display: block; font-weight: 600; margin-bottom: 5px; font-size: 14px; color: #475569; }
-        select, input[type="text"], input[type="password"] { width: 100%; padding: 9px; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 6px; margin-bottom: 6px; font-size: 14px; }
-        button { background-color: #3b82f6; color: white; border: none; padding: 9px 14px; font-size: 14px; border-radius: 6px; cursor: pointer; font-weight: 500; }
+        select, input[type="text"], input[type="password"], textarea {
+            width: 100%;
+            padding: 9px;
+            box-sizing: border-box;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            margin-bottom: 6px;
+            background: #ffffff;
+            font-size: 14px;
+            color: #334155;
+        }
+        button {
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            padding: 9px 14px;
+            font-size: 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
         button:hover { background-color: #2563eb; }
-        .add-task-btn { background-color: #10b981; padding: 5px 10px; font-size: 12px; margin-top: 6px; }
-        .remove-slot-btn { background-color: #ef4444; padding: 7px 11px; font-size: JSONID; }
-        .delete-btn { background-color: #ef4444; padding: 4px 8px; font-size: 12px; margin-left: 10px; }
-        .task-list-item { display: flex; justify-content: space-between; align-items: center; background: #ffffff; padding: 8px 12px; border: 1px solid #e2e8f0; margin-bottom: 6px; border-radius: 6px; }
-        .task-row { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; }
-        details { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 12px; padding: 12px; }
-        summary { font-weight: 600; color: #1e293b; cursor: pointer; font-size: 16px; outline: none; }
-        .day-content { margin-top: 12px; padding-top: 12px; border-top: 1px dashed #e2e8f0; }
-        .child-view-table { width: 100%; border-collapse: collapse; margin-top: 6px; background: #fff; }
-        .child-view-table td { border: 1px solid #f1f5f9; padding: 10px 12px; text-align: left; }
+        .add-task-btn {
+            background-color: #10b981;
+            padding: 5px 10px;
+            font-size: 12px;
+            margin-top: 6px;
+        }
+        .add-task-btn:hover { background-color: #059669; }
+        .remove-slot-btn {
+            background-color: #ef4444;
+            padding: 7px 11px;
+            font-size: 14px;
+        }
+        .remove-slot-btn:hover { background-color: #dc2626; }
+        .delete-btn {
+            background-color: #ef4444;
+            padding: 4px 8px;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+        .delete-btn:hover { background-color: #dc2626; }
+        .task-list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #ffffff;
+            padding: 8px 12px;
+            border: 1px solid #e2e8f0;
+            margin-bottom: 6px;
+            border-radius: 6px;
+        }
+        .task-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+        
+        /* Aufklappbare Tage mit sanftem Design */
+        details {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            padding: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+        }
+        summary {
+            font-weight: 600;
+            color: #1e293b;
+            cursor: pointer;
+            font-size: 16px;
+            outline: none;
+        }
+        summary:hover {
+            color: #3b82f6;
+        }
+        .day-content {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px dashed #e2e8f0;
+        }
+
+        /* Ansicht für das Kind */
+        .child-view-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 6px;
+            background: #fff;
+        }
+        .child-view-table th, .child-view-table td {
+            border: 1px solid #f1f5f9;
+            padding: 10px 12px;
+            text-align: left;
+        }
         .task-cell { width: 100%; font-size: 15px; color: #334155; }
         .task-cell input { margin-right: 10px; width: 18px; height: 18px; cursor: pointer; vertical-align: middle; accent-color: #3b82f6; }
         tr.done { background-color: #f1f5f9; color: #94a3b8; text-decoration: line-through; }
-        .admin-panel { background: #f8fafc; border: 1px solid #e2e8f0; padding: 18px; border-radius: 8px; margin-bottom: 20px; }
-        .sync-status { font-size: 12px; color: #059669; margin-top: 5px; font-weight: 600; }
+        
+        /* Sanfter Admin-Bereich */
+        .admin-panel {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 18px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        /* Angenehmes Backup-Menü */
+        .backup-panel {
+            background: #fdf8f6;
+            border: 1px solid #fed7aa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body>
 
     <h2 id="pageTitle">📋 Wochenplan</h2>
 
+    <!-- BACKUP & WHATSAPP MENÜ -->
+    <div class="backup-panel">
+        <details>
+            <summary style="color: #c2410c;">💾 Geheim-Tresor: Backup & WhatsApp-Sicherung 🕵️‍♂️</summary>
+            <div class="day-content">
+                <p style="font-size: 12px; color: #9a3412; margin-top: 0;">Sichere deinen Spielstand vor Updates oder stelle ihn per Geheimcode wieder her:</p>
+                <textarea id="backup-code-input" rows="3" placeholder="Sicherungscode hier einfügen..." style="font-family: monospace; font-size: 11px;"></textarea>
+                <div style="display: flex; gap: 8px; margin-top: 8px;">
+                    <button onclick="generateBackupCode()" style="background: #6366f1; flex: 1; font-size: 12px;">📤 Code kopieren</button>
+                    <button onclick="sendBackupWhatsApp()" style="background: #10b981; flex: 1; font-size: 12px;">💬 Per WhatsApp</button>
+                    <button onclick="loadBackupCode()" style="background: #f59e0b; flex: 1; font-size: 12px;">📥 Daten laden</button>
+                </div>
+            </div>
+        </details>
+    </div>
+
     <!-- ADMIN-BEREICH -->
     <div class="admin-panel" id="adminPanel">
         <h3>⚙️ Admin-Modus</h3>
-        <p style="font-size: 13px; color: #64748b;">Bitte PIN eingeben:</p>
+        <p style="font-size: 13px; color: #64748b;">Bitte PIN eingeben, um Aufgaben zu verwalten und den Wochenplan zu bearbeiten:</p>
         <div id="loginBox" style="display: flex; gap: 10px; max-width: 300px;">
             <input type="password" id="adminPin" placeholder="PIN eingeben..." maxlength="4">
             <button onclick="checkAdminLogin()" style="margin-top: 0;">Entsperren</button>
         </div>
 
         <div id="editArea" style="display: none; margin-top: 15px;">
-            <label>Name des Kindes:</label>
-            <input type="text" id="childNameInput" value="Oliver" oninput="saveAdminChanges()">
+            <label>Name des Kindes für diesen Plan:</label>
+            <input type="text" id="childNameInput" value="Oliver" oninput="saveChildName()">
             
             <div style="background: #ffffff; border: 1px solid #e2e8f0; padding: 12px; margin-top: 15px; border-radius: 6px;">
-                <h4 style="margin-top: 0; color: #1e293b;">Aufgaben-Liste verwalten</h4>
+                <h4 style="margin-top: 0; color: #1e293b;">Aufgaben-Liste erweitern & bearbeiten</h4>
                 <div style="display: flex; gap: 10px;">
-                    <input type="text" id="neueAufgabeInput" placeholder="Neue Aufgabe...">
-                    <button onclick="aufgabeHinzufuegen()" style="margin-top: 0;">Hinzufügen</button>
+                    <input type="text" id="neueAufgabeInput" placeholder="Neue Aufgabe eingeben...">
+                    <button onclick="aufgabeHinzufuegen()" style="margin-top: 0; white-space: nowrap;">Hinzufügen</button>
                 </div>
                 <div id="aufgabenListeContainer" style="max-height: 120px; overflow-y: auto; margin-top: 10px;"></div>
             </div>
@@ -57,9 +182,7 @@
             <h4 style="margin: 15px 0 5px 0; color: #1e293b;">Wochentage belegen:</h4>
             <div id="builderContainer"></div>
             
-            <div id="syncStatus" class="sync-status">☁️ Cloud-Status: Bereit</div>
-
-            <button onclick="lockAdminMode()" style="background-color: #f97316; margin-top: 15px; width: 100%;">🔒 Bearbeiten beenden</button>
+            <button onclick="lockAdminMode()" style="background-color: #f97316; margin-top: 15px; width: 100%;">🔒 Bearbeiten beenden & Ansicht sperren</button>
         </div>
     </div>
 
@@ -68,76 +191,21 @@
 
     <script>
         const MASTER_PIN = "1985";
-        
-        // Fester, eindeutiger Speicher-Link für Olivers Wochenplan
-        const STORAGE_URL = "https://api.npoint.io/oliver_wochenplan_v1";
-
         const wochentage = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"];
         
-        let localData = JSON.parse(localStorage.getItem('lokales_backup_oliver')) || {
-            child_name: "Oliver",
-            shared_aufgaben: ["Spülmaschine", "Schulrucksack aufräumen", "Zimmer aufräumen", "Duschen", "Lernzeit", "Tisch decken"],
-            tasks: {},
-            checkboxes: {}
-        };
+        let aufgabenListe = JSON.parse(localStorage.getItem('shared_aufgaben')) || [
+            "Spülmaschine", "Schulrucksack aufräumen", "Zimmer aufräumen", "Duschen", "Lernzeit", "Tisch decken"
+        ];
 
-        async function initApp() {
-            await loadDataFromCloud();
+        function initApp() {
             renderAufgabenManager();
             renderBuilder();
             renderPublicView();
         }
 
-        async function loadDataFromCloud() {
-            try {
-                let response = await fetch(STORAGE_URL);
-                if (response.ok) {
-                    let cloudData = await response.json();
-                    if (cloudData && cloudData.child_name) {
-                        localData = cloudData;
-                        localStorage.setItem('lokales_backup_oliver', JSON.stringify(localData));
-                    }
-                }
-            } catch (e) {
-                console.log("Nutze lokales Backup");
-            }
-        }
-
-        async function syncToCloud() {
-            let statusEl = document.getElementById('syncStatus');
-            if (statusEl) statusEl.innerText = "☁️ Speichert...";
-
-            localStorage.setItem('lokales_backup_oliver', JSON.stringify(localData));
-
-            try {
-                await fetch(STORAGE_URL, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(localData)
-                });
-                if (statusEl) statusEl.innerText = "✅ Live aktualisiert!";
-            } catch (e) {
-                if (statusEl) statusEl.innerText = "⚠️ Lokal gespeichert";
-            }
-        }
-
-        async function saveAdminChanges() {
-            localData.child_name = document.getElementById('childNameInput').value || "Oliver";
-            wochentage.forEach(tag => {
-                const slotsContainer = document.getElementById('builder_slots_' + tag);
-                if (slotsContainer) {
-                    const selects = slotsContainer.querySelectorAll('select');
-                    let tasks = [];
-                    selects.forEach(sel => { if (sel.value) tasks.push(sel.value); });
-                    localData.tasks[tag] = tasks;
-                }
-            });
-            renderPublicView();
-            await syncToCloud();
-        }
-
         function checkAdminLogin() {
-            if (document.getElementById('adminPin').value === MASTER_PIN) {
+            let pin = document.getElementById('adminPin').value;
+            if (pin === MASTER_PIN) {
                 document.getElementById('loginBox').style.display = 'none';
                 document.getElementById('editArea').style.display = 'block';
             } else {
@@ -150,141 +218,259 @@
             document.getElementById('loginBox').style.display = 'flex';
             document.getElementById('editArea').style.display = 'none';
             document.getElementById('adminPin').value = '';
+            renderPublicView();
+        }
+
+        function saveChildName() {
+            let name = document.getElementById('childNameInput').value || "Kind";
+            localStorage.setItem('plan_child_name', name);
+            document.getElementById('pageTitle').innerText = "📋 Wochenplan für " + name;
+        }
+
+        function getBackupJSONString() {
+            let backupData = {
+                child_name: localStorage.getItem('plan_child_name'),
+                shared_aufgaben: localStorage.getItem('shared_aufgaben')
+            };
+            wochentage.forEach(tag => {
+                backupData['plan_tasks_' + tag] = localStorage.getItem('plan_tasks_' + tag);
+            });
+            for (let i = 0; i < localStorage.length; i++) {
+                let key = localStorage.key(i);
+                if (key && key.startsWith('task_')) {
+                    backupData[key] = localStorage.getItem(key);
+                }
+            }
+            return btoa(encodeURIComponent(JSON.stringify(backupData)));
+        }
+
+        function generateBackupCode() {
+            let code = getBackupJSONString();
+            let textarea = document.getElementById('backup-code-input');
+            textarea.value = code;
+            textarea.select();
+            try {
+                navigator.clipboard.writeText(code);
+                alert("🕵️‍♂️ Geheim-Code erfolgreich in die Zwischenablage kopiert!");
+            } catch (e) {
+                alert("Code generiert! Bitte aus dem Textfeld kopieren.");
+            }
+        }
+
+        function sendBackupWhatsApp() {
+            let code = getBackupJSONString();
+            document.getElementById('backup-code-input').value = code;
+            let childName = localStorage.getItem('plan_child_name') || "Oliver";
+            let message = encodeURIComponent(`🕵️‍♂️ Wochenplan-Backup (${childName}):\n\n` + code);
+            window.open(`https://api.whatsapp.com/send?text=${message}`, '_blank');
+        }
+
+        function loadBackupCode() {
+            let code = document.getElementById('backup-code-input').value.trim();
+            if (!code) {
+                alert("Bitte zuerst einen Code einfügen!");
+                return;
+            }
+            try {
+                let jsonStr = decodeURIComponent(atob(code));
+                let data = JSON.parse(jsonStr);
+
+                if (data.child_name) localStorage.setItem('plan_child_name', data.child_name);
+                if (data.shared_aufgaben) localStorage.setItem('shared_aufgaben', data.shared_aufgaben);
+                
+                wochentage.forEach(tag => {
+                    if (data['plan_tasks_' + tag]) localStorage.setItem('plan_tasks_' + tag, data['plan_tasks_' + tag]);
+                });
+
+                Object.keys(data).forEach(key => {
+                    if (key.startsWith('task_')) {
+                        localStorage.setItem(key, data[key]);
+                    }
+                });
+
+                alert("🎉 Daten erfolgreich aus dem Tresor wiederhergestellt!");
+                location.reload();
+            } catch (e) {
+                alert("❌ Ungültiger Code! Wiederherstellung fehlgeschlagen.");
+            }
         }
 
         function renderAufgabenManager() {
             const container = document.getElementById('aufgabenListeContainer');
             container.innerHTML = '';
-            localData.shared_aufgaben.forEach(function(aufgabe, index) {
+            aufgabenListe.forEach(function(aufgabe, index) {
                 let item = document.createElement('div');
                 item.className = 'task-list-item';
                 item.innerHTML = '<span>' + aufgabe + '</span><button class="delete-btn" onclick="aufgabeLoeschen(' + index + ')">Löschen</button>';
                 container.appendChild(item);
             });
+            localStorage.setItem('shared_aufgaben', JSON.stringify(aufgabenListe));
         }
 
-        async function aufgabeHinzufuegen() {
+        function aufgabeHinzufuegen() {
             const input = document.getElementById('neueAufgabeInput');
             const val = input.value.trim();
-            if (val && localData.shared_aufgaben.indexOf(val) === -1) {
-                localData.shared_aufgaben.push(val);
+            if (val && aufgabenListe.indexOf(val) === -1) {
+                aufgabenListe.push(val);
                 input.value = '';
-                renderAufgabenManager();
-                renderBuilder();
-                await syncToCloud();
+                initApp();
+            } else {
+                alert("Bitte eine gültige, neue Aufgabe eingeben.");
             }
         }
 
-        async function aufgabeLoeschen(index) {
-            localData.shared_aufgaben.splice(index, 1);
-            renderAufgabenManager();
-            renderBuilder();
-            await syncToCloud();
+        function aufgabeLoeschen(index) {
+            aufgabenListe.splice(index, 1);
+            initApp();
         }
 
         function renderBuilder() {
             const container = document.getElementById('builderContainer');
-            container.innerHTML = '';
+            if (container.children.length === 0) {
+                wochentage.forEach(function(tag) {
+                    let details = document.createElement('details');
+                    details.innerHTML = '<summary>📅 ' + tag + '</summary>' +
+                                        '<div class="day-content" id="builder_slots_' + tag + '">' +
+                                        '</div>' +
+                                        '<button type="button" class="add-task-btn" onclick="addSlot(\'' + tag + '\')">+ Aufgabe hinzufügen</button>';
+                    container.appendChild(details);
+                });
+            }
             wochentage.forEach(function(tag) {
-                let details = document.createElement('details');
-                details.innerHTML = '<summary>📅 ' + tag + '</summary>' +
-                                    '<div class="day-content" id="builder_slots_' + tag + '"></div>' +
-                                    '<button type="button" class="add-task-btn" onclick="addSlot(\'' + tag + '\')">+ Aufgabe hinzufügen</button>';
-                container.appendChild(details);
-            });
-
-            wochentage.forEach(function(tag) {
-                let savedTasks = localData.tasks[tag] || [""];
+                let savedTasks = JSON.parse(localStorage.getItem('plan_tasks_' + tag)) || [""];
                 let slotsContainer = document.getElementById('builder_slots_' + tag);
                 slotsContainer.innerHTML = '';
-                savedTasks.forEach(val => { slotsContainer.innerHTML += createSlotHtml(tag, val); });
+                savedTasks.forEach(function(val, idx) {
+                    slotsContainer.innerHTML += createSlotHtml(tag, idx + 1, val);
+                });
             });
-            document.getElementById('childNameInput').value = localData.child_name || "Oliver";
-            document.getElementById('pageTitle').innerText = "📋 Wochenplan für " + (localData.child_name || "Oliver");
+
+            let savedName = localStorage.getItem('plan_child_name') || "Oliver";
+            document.getElementById('childNameInput').value = savedName;
+            document.getElementById('pageTitle').innerText = "📋 Wochenplan für " + savedName;
         }
 
-        function createSlotHtml(tag, selectedVal) {
+        function createSlotHtml(tag, index, selectedVal) {
             let optionsHtml = '<option value="">-- Aufgabe wählen --</option>';
-            localData.shared_aufgaben.forEach(function(a) {
+            aufgabenListe.forEach(function(a) {
                 let sel = (a === selectedVal) ? ' selected' : '';
                 optionsHtml += '<option value="' + a + '"' + sel + '>' + a + '</option>';
             });
-            return '<div class="task-row"><select onchange="saveAdminChanges()"> ' + optionsHtml + '</select>' +
-                   '<button type="button" class="remove-slot-btn" onclick="removeSlot(this)">X</button></div>';
+
+            return '<div class="task-row">' +
+                   '<select onchange="saveBuilderData()"> ' + optionsHtml + '</select>' +
+                   '<button type="button" class="remove-slot-btn" onclick="removeSlot(this)">X</button>' +
+                   '</div>';
         }
 
         function addSlot(tag) {
             const slotsContainer = document.getElementById('builder_slots_' + tag);
             let selects = slotsContainer.querySelectorAll('select');
             let currentValues = [];
-            selects.forEach(s => currentValues.push(s.value));
+            selects.forEach(function(s) { currentValues.push(s.value); });
             currentValues.push("");
+            
             let html = '';
-            currentValues.forEach(val => { html += createSlotHtml(tag, val); });
+            currentValues.forEach(function(val, idx) {
+                html += createSlotHtml(tag, idx + 1, val);
+            });
             slotsContainer.innerHTML = html;
-            saveAdminChanges();
+            saveBuilderData();
         }
 
         function removeSlot(btn) {
             const row = btn.parentElement;
-            if (row.parentElement.children.length > 1) {
+            const slotsContainer = row.parentElement;
+            if (slotsContainer.children.length > 1) {
                 row.remove();
-                saveAdminChanges();
+                saveBuilderData();
             } else {
                 alert("Mindestens ein Feld pro Tag beibehalten.");
             }
         }
 
-        async function renderPublicView() {
-            await loadDataFromCloud();
-            const container = document.getElementById('publicViewContainer');
-            let childName = localData.child_name || "Oliver";
-            document.getElementById('pageTitle').innerText = "📋 Wochenplan für " + childName;
-
-            let html = '<h3 style="color: #1e293b; border-bottom: 2px solid #3b82f6; padding-bottom: 5px;">Wochenplan für ' + childName + '</h3>';
-
+        function saveBuilderData() {
             wochentage.forEach(function(tag) {
-                let tasks = localData.tasks[tag] || [];
-                if (tasks.length === 0) tasks = ["Keine Aufgaben für heute"];
-
-                html += '<details open><summary>📅 ' + tag + '</summary><div class="day-content"><table class="child-view-table"><tbody>';
-
-                tasks.forEach(function(task, index) {
-                    let uniqueId = tag + '_' + index;
-                    let taskDisplayHtml = '<span>' + task + '</span>';
-                    
-                    if (task.toLowerCase() === 'lernzeit') {
-                        taskDisplayHtml += '<a href="https://petruck670-cyber.github.io/Lernapp/Lernapp.html?start=15" target="_blank" style="background:#3b82f6; color:white; padding:4px 8px; text-decoration:none; border-radius:4px; font-size:12px; margin-left:8px; display:inline-block;">🚀 Lernapp</a>';
-                    } else if (task.toLowerCase() === 'zimmer aufräumen') {
-                        taskDisplayHtml += '<a href="https://petruck670-cyber.github.io/Zimmer/aufr%C3%A4umen.html" target="_blank" style="background:#f97316; color:white; padding:4px 8px; text-decoration:none; border-radius:4px; font-size:12px; margin-left:8px; display:inline-block;">🧹 Aufräum-App</a>';
-                    }
-
-                    let isChecked = localData.checkboxes && localData.checkboxes[uniqueId] ? 'checked' : '';
-                    html += '<tr id="row_' + uniqueId + '" class="' + (isChecked ? 'done' : '') + '"><td class="task-cell">' +
-                            '<input type="checkbox" id="' + uniqueId + '" ' + isChecked + ' onchange="toggleTask(\'' + uniqueId + '\')"> ' +
-                            taskDisplayHtml + '</td></tr>';
-                });
-                html += '</tbody></table></div></details>';
+                const slotsContainer = document.getElementById('builder_slots_' + tag);
+                if (slotsContainer) {
+                    const selects = slotsContainer.querySelectorAll('select');
+                    let tasks = [];
+                    selects.forEach(function(sel) {
+                        if (sel.value) tasks.push(sel.value);
+                    });
+                    localStorage.setItem('plan_tasks_' + tag, JSON.stringify(tasks));
+                }
             });
-            container.innerHTML = html;
+            renderPublicView();
         }
 
-        async function toggleTask(id) {
+        function renderPublicView() {
+            const container = document.getElementById('publicViewContainer');
+            let childName = localStorage.getItem('plan_child_name') || "Oliver";
+            
+            let html = '<h3 style="color: #1e293b; border-bottom: 2px solid #3b82f6; padding-bottom: 5px;">Wochenplan für ' + childName + '</h3>';
+            html += '<p style="font-size: 13px; color: #64748b;">Klicke auf einen Wochentag, um ihn aufzuklappen, und hake deine erledigten Aufgaben ab!</p>';
+
+            wochentage.forEach(function(tag) {
+                let tasks = JSON.parse(localStorage.getItem('plan_tasks_' + tag)) || [];
+                if (tasks.length === 0) tasks = ["Keine Aufgaben für heute"];
+
+                html += '<details open><summary>📅 ' + tag + '</summary><div class="day-content">';
+                html += '<table class="child-view-table"><tbody>';
+
+                tasks.forEach(function(task, index) {
+                    let uniqueId = 'task_' + tag + '_' + index;
+                    let taskDisplayHtml = '';
+                    
+                    if (task.toLowerCase() === 'lernzeit') {
+                        taskDisplayHtml = '<span>Lernzeit </span>' +
+                                          '<a href="https://petruck670-cyber.github.io/Lernapp/Lernapp.html?start=15" target="_blank" style="background:#3b82f6; color:white; padding:4px 8px; text-decoration:none; border-radius:4px; font-size:12px; margin-left:8px; display:inline-block;">🚀 Lernapp öffnen</a>';
+                    } else if (task.toLowerCase() === 'zimmer aufräumen') {
+                        taskDisplayHtml = '<span>Zimmer aufräumen </span>' +
+                                          '<a href="https://petruck670-cyber.github.io/Zimmer/aufr%C3%A4umen.html" target="_blank" style="background:#f97316; color:white; padding:4px 8px; text-decoration:none; border-radius:4px; font-size:12px; margin-left:8px; display:inline-block;">🧹 Aufräum-App öffnen</a>';
+                    } else {
+                        taskDisplayHtml = '<span>' + task + '</span>';
+                    }
+
+                    html += '<tr id="row_' + uniqueId + '">' +
+                            '<td class="task-cell">' +
+                            '<input type="checkbox" id="' + uniqueId + '" onchange="toggleTask(\'' + uniqueId + '\')"> ' +
+                            taskDisplayHtml +
+                            '</td></tr>';
+                });
+
+                html += '</tbody></table></div></details>';
+            });
+
+            container.innerHTML = html;
+
+            setTimeout(function() {
+                let checkboxes = container.querySelectorAll("input[type='checkbox']");
+                checkboxes.forEach(function(cb) {
+                    let savedState = localStorage.getItem(cb.id);
+                    if (savedState === "true") {
+                        cb.checked = true;
+                        let row = document.getElementById("row_" + cb.id);
+                        if (row) row.classList.add("done");
+                    }
+                });
+            }, 50);
+        }
+
+        function toggleTask(id) {
             let cb = document.getElementById(id);
             let row = document.getElementById("row_" + id);
-            if (!localData.checkboxes) localData.checkboxes = {};
-            
             if (cb.checked) {
                 row.classList.add("done");
-                localData.checkboxes[id] = true;
+                localStorage.setItem(id, "true");
             } else {
                 row.classList.remove("done");
-                localData.checkboxes[id] = false;
+                localStorage.setItem(id, "false");
             }
-            await syncToCloud();
         }
 
         initApp();
     </script>
+
 </body>
 </html>
