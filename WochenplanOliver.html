@@ -126,6 +126,65 @@
             text-align: center;
         }
     </style>
+
+    <!-- Firebase SDKs einbinden -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAlGu3VqshTh85dH-fsU7FDnJtklV46k5A",
+            authDomain: "wochenplan-f3735.firebaseapp.com",
+            projectId: "wochenplan-f3735",
+            storageBucket: "wochenplan-f3735.appspot.com",
+            messagingSenderId: "862358870805",
+            appId: "1:862358870805:web:efeef5d4bf07111a5ffcfb",
+            measurementId: "G-31QQ9XHZL3"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const docRef = doc(db, "apps", "wochenplan_oliver");
+
+        window.loadDataFromCloud = async function() {
+            try {
+                let snap = await getDoc(docRef);
+                if (snap.exists()) {
+                    localData = snap.data();
+                    refreshAllUI();
+                }
+            } catch (e) {
+                console.log("Ladefehler aus Cloud", e);
+            }
+        };
+
+        window.syncToCloud = async function() {
+            let statusEl = document.getElementById('syncStatus');
+            if (statusEl) statusEl.innerText = "☁️ Speichert in Cloud...";
+
+            try {
+                await setDoc(docRef, localData);
+                if (statusEl) statusEl.innerText = "✅ Live aktualisiert & gespeichert!";
+            } catch (e) {
+                if (statusEl) statusEl.innerText = "❌ Fehler beim Speichern zur Cloud";
+            }
+        };
+
+        // Echtzeit Live-Sync (ignoriert eigene Updates um Zurücksetzen zu verhindern)
+        onSnapshot(docRef, (docSnap) => {
+            if (docSnap.exists()) {
+                let remoteData = docSnap.data();
+                if (JSON.stringify(localData) !== JSON.stringify(remoteData)) {
+                    localData = remoteData;
+                    refreshAllUI();
+                }
+            }
+        });
+
+        window.initFirebaseApp = function() {
+            loadDataFromCloud();
+        };
+    </script>
 </head>
 <body>
 
@@ -142,7 +201,7 @@
 
         <div id="editArea" style="display: none; margin-top: 15px;">
             <label>Name des Kindes für diesen Plan:</label>
-            <input type="text" id="childNameInput" value="Oliver" oninput="saveAdminChanges()">
+            <input type="text" id="childNameInput" value="Oliver" oninput="collectAdminChanges(); syncToCloud();">
             
             <div style="background: #ffffff; border: 1px solid #e2e8f0; padding: 12px; margin-top: 15px; border-radius: 6px;">
                 <h4 style="margin-top: 0; color: #1e293b;">Aufgaben-Liste erweitern & bearbeiten</h4>
@@ -156,7 +215,7 @@
             <h4 style="margin: 15px 0 5px 0; color: #1e293b;">Wochentage belegen:</h4>
             <div id="builderContainer"></div>
             
-            <div id="syncStatus" class="sync-status">☁️ Cloud-Status: Bereit</div>
+            <div id="syncStatus" class="sync-status">⚡ Firebase Live-Sync aktiv</div>
 
             <button onclick="lockAdminMode()" style="background-color: #f97316; margin-top: 15px; width: 100%;">🔒 Bearbeiten beenden & Ansicht sperren</button>
         </div>
@@ -167,9 +226,6 @@
 
     <script>
         const MASTER_PIN = "1985";
-        const JSONBIN_ID = "6a6863c1f5f4af5e29cbcc07";
-        const JSONBIN_KEY = "$2a$10$y5482CAg1LDcJ2UVgxWaaesC/f.yWYS7hyx6QNvUz6H5A9kdjKtLa";
-        
         const wochentage = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"];
         
         let localData = {
@@ -179,54 +235,16 @@
             checkboxes: {}
         };
 
-        async function initApp() {
-            await loadDataFromCloud();
+        function refreshAllUI() {
             renderAufgabenManager();
             renderBuilder();
             renderPublicView();
         }
 
-        async function loadDataFromCloud() {
-            try {
-                let response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_ID}/latest`, {
-                    headers: { 'X-Master-Key': JSONBIN_KEY }
-                });
-                if (response.ok) {
-                    let json = await response.json();
-                    if (json && json.record && json.record.child_name) {
-                        localData = json.record;
-                    }
-                }
-            } catch (e) {
-                console.log("Ladefehler aus Cloud");
-            }
-        }
-
-        async function syncToCloud() {
-            let statusEl = document.getElementById('syncStatus');
-            if (statusEl) statusEl.innerText = "☁️ Speichert in Cloud...";
-
-            try {
-                let response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_ID}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Master-Key': JSONBIN_KEY
-                    },
-                    body: JSON.stringify(localData)
-                });
-                if (response.ok) {
-                    if (statusEl) statusEl.innerText = "✅ Live aktualisiert & gespeichert!";
-                } else {
-                    if (statusEl) statusEl.innerText = "❌ Fehler beim Speichern zur Cloud";
-                }
-            } catch (e) {
-                if (statusEl) statusEl.innerText = "❌ Netzwerkfehler bei Cloud";
-            }
-        }
-
-        async function saveAdminChanges() {
-            localData.child_name = document.getElementById('childNameInput').value || "Oliver";
+        function collectAdminChanges() {
+            let nameField = document.getElementById('childNameInput');
+            if (nameField) localData.child_name = nameField.value || "Oliver";
+            
             wochentage.forEach(tag => {
                 const slotsContainer = document.getElementById('builder_slots_' + tag);
                 if (slotsContainer) {
@@ -236,6 +254,10 @@
                     localData.tasks[tag] = tasks;
                 }
             });
+        }
+
+        async function saveAdminChanges() {
+            collectAdminChanges();
             renderPublicView();
             await syncToCloud();
         }
@@ -245,6 +267,7 @@
             if (pin === MASTER_PIN) {
                 document.getElementById('loginBox').style.display = 'none';
                 document.getElementById('editArea').style.display = 'block';
+                refreshAllUI();
             } else {
                 alert("Falscher PIN!");
                 document.getElementById('adminPin').value = '';
@@ -260,6 +283,7 @@
 
         function renderAufgabenManager() {
             const container = document.getElementById('aufgabenListeContainer');
+            if (!container) return;
             container.innerHTML = '';
             localData.shared_aufgaben.forEach(function(aufgabe, index) {
                 let item = document.createElement('div');
@@ -273,10 +297,10 @@
             const input = document.getElementById('neueAufgabeInput');
             const val = input.value.trim();
             if (val && localData.shared_aufgaben.indexOf(val) === -1) {
+                collectAdminChanges();
                 localData.shared_aufgaben.push(val);
                 input.value = '';
-                renderAufgabenManager();
-                renderBuilder();
+                refreshAllUI();
                 await syncToCloud();
             } else {
                 alert("Bitte eine gültige, neue Aufgabe eingeben.");
@@ -284,17 +308,28 @@
         }
 
         async function aufgabeLoeschen(index) {
+            collectAdminChanges();
             localData.shared_aufgaben.splice(index, 1);
-            renderAufgabenManager();
-            renderBuilder();
+            refreshAllUI();
             await syncToCloud();
         }
 
         function renderBuilder() {
             const container = document.getElementById('builderContainer');
+            if (!container) return;
+            
+            // Merken, welche Details (Wochentage) offen waren
+            let openDays = {};
+            container.querySelectorAll('details').forEach((det, idx) => {
+                openDays[wochentage[idx]] = det.open;
+            });
+
             container.innerHTML = '';
-            wochentage.forEach(function(tag) {
+            wochentage.forEach(function(tag, idx) {
+                let isOpen = openDays[tag] !== undefined ? openDays[tag] : (idx === 0);
                 let details = document.createElement('details');
+                if (isOpen) details.setAttribute('open', '');
+                
                 details.innerHTML = '<summary>📅 ' + tag + '</summary>' +
                                     '<div class="day-content" id="builder_slots_' + tag + '"></div>' +
                                     '<button type="button" class="add-task-btn" onclick="addSlot(\'' + tag + '\')">+ Aufgabe hinzufügen</button>';
@@ -304,12 +339,18 @@
             wochentage.forEach(function(tag) {
                 let savedTasks = localData.tasks[tag] || [""];
                 let slotsContainer = document.getElementById('builder_slots_' + tag);
-                slotsContainer.innerHTML = '';
-                savedTasks.forEach(val => { slotsContainer.innerHTML += createSlotHtml(tag, val); });
+                if (slotsContainer) {
+                    slotsContainer.innerHTML = '';
+                    savedTasks.forEach(val => { slotsContainer.innerHTML += createSlotHtml(tag, val); });
+                }
             });
 
-            document.getElementById('childNameInput').value = localData.child_name || "Oliver";
-            document.getElementById('pageTitle').innerText = "📋 Wochenplan für " + (localData.child_name || "Oliver");
+            let nameInput = document.getElementById('childNameInput');
+            if (nameInput && document.activeElement !== nameInput) {
+                nameInput.value = localData.child_name || "Oliver";
+            }
+            let pageTitle = document.getElementById('pageTitle');
+            if (pageTitle) pageTitle.innerText = "📋 Wochenplan für " + (localData.child_name || "Oliver");
         }
 
         function createSlotHtml(tag, selectedVal) {
@@ -326,33 +367,44 @@
         }
 
         function addSlot(tag) {
+            collectAdminChanges();
             const slotsContainer = document.getElementById('builder_slots_' + tag);
+            if (!slotsContainer) return;
             let selects = slotsContainer.querySelectorAll('select');
             let currentValues = [];
             selects.forEach(s => currentValues.push(s.value));
             currentValues.push("");
             
-            let html = '';
-            currentValues.forEach(val => { html += createSlotHtml(tag, val); });
-            slotsContainer.innerHTML = html;
+            localData.tasks[tag] = currentValues;
+            renderBuilder();
             saveAdminChanges();
         }
 
         function removeSlot(btn) {
+            collectAdminChanges();
             const row = btn.parentElement;
-            if (row.parentElement.children.length > 1) {
-                row.remove();
+            const slotsContainer = row.parentElement;
+            if (slotsContainer.children.length > 1) {
+                let tag = slotsContainer.id.replace('builder_slots_', '');
+                let selects = slotsContainer.querySelectorAll('select');
+                let currentValues = [];
+                selects.forEach((s, idx) => {
+                    if (s !== row.querySelector('select')) currentValues.push(s.value);
+                });
+                localData.tasks[tag] = currentValues;
+                renderBuilder();
                 saveAdminChanges();
             } else {
                 alert("Mindestens ein Feld pro Tag beibehalten.");
             }
         }
 
-        async function renderPublicView() {
-            await loadDataFromCloud();
+        function renderPublicView() {
             const container = document.getElementById('publicViewContainer');
+            if (!container) return;
             let childName = localData.child_name || "Oliver";
-            document.getElementById('pageTitle').innerText = "📋 Wochenplan für " + childName;
+            let pageTitle = document.getElementById('pageTitle');
+            if (pageTitle) pageTitle.innerText = "📋 Wochenplan für " + childName;
 
             let html = '<h3 style="color: #1e293b; border-bottom: 2px solid #3b82f6; padding-bottom: 5px;">Wochenplan für ' + childName + '</h3>';
             html += '<p style="font-size: 13px; color: #64748b;">Klicke auf einen Wochentag, um ihn aufzuklappen, und hake deine erledigten Aufgaben ab!</p>';
@@ -365,6 +417,7 @@
                 html += '<table class="child-view-table"><tbody>';
 
                 tasks.forEach(function(task, index) {
+                    if (!task) return;
                     let uniqueId = tag + '_' + index;
                     let taskDisplayHtml = '';
                     
@@ -373,7 +426,7 @@
                                           '<a href="https://petruck670-cyber.github.io/Lernapp/Lernapp.html?start=15" target="_blank" style="background:#3b82f6; color:white; padding:4px 8px; text-decoration:none; border-radius:4px; font-size:12px; margin-left:8px; display:inline-block;">🚀 Lernapp öffnen</a>';
                     } else if (task.toLowerCase() === 'zimmer aufräumen') {
                         taskDisplayHtml = '<span>Zimmer aufräumen </span>' +
-                                          '<a href="https://petruck670-cyber.github.io/Zimmer/aufr%C3%A4umen.html" target="_blank" style="background:#f97316; color:white; padding:4px 8px; text-decoration:none; border-radius:4px; font-size:12px; margin-left:8px; display:inline-block;">🧹 Aufräum-App öffnen</a>';
+                                          '<a href="https://petruck670-cyber.github.io/Zimmer/zimmer.html" target="_blank" style="background:#f97316; color:white; padding:4px 8px; text-decoration:none; border-radius:4px; font-size:12px; margin-left:8px; display:inline-block;">🧹 Aufräum-App öffnen</a>';
                     } else {
                         taskDisplayHtml = '<span>' + task + '</span>';
                     }
@@ -401,16 +454,18 @@
             if (!localData.checkboxes) localData.checkboxes = {};
 
             if (cb.checked) {
-                row.classList.add("done");
+                if (row) row.classList.add("done");
                 localData.checkboxes[id] = true;
             } else {
-                row.classList.remove("done");
+                if (row) row.classList.remove("done");
                 localData.checkboxes[id] = false;
             }
             await syncToCloud();
         }
 
-        initApp();
+        window.onload = function() {
+            window.initFirebaseApp();
+        };
     </script>
 
 </body>
