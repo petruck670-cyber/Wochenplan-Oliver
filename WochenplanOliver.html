@@ -71,10 +71,19 @@
             border-radius: 6px;
         }
         .task-row {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 8px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .task-row-inner {
             display: flex;
             gap: 8px;
             align-items: center;
-            margin-bottom: 6px;
         }
         details {
             background: #ffffff;
@@ -144,14 +153,19 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        // Eigener Cloud-Pfad für Oliver, damit es getrennt von Lina läuft:
         const docRef = doc(db, "apps", "wochenplan_oliver");
+
+        let isUpdatingFromRemote = false;
 
         window.loadDataFromCloud = async function() {
             try {
                 let snap = await getDoc(docRef);
                 if (snap.exists()) {
+                    isUpdatingFromRemote = true;
                     localData = snap.data();
                     refreshAllUI();
+                    isUpdatingFromRemote = false;
                 }
             } catch (e) {
                 console.log("Ladefehler aus Cloud", e);
@@ -159,6 +173,7 @@
         };
 
         window.syncToCloud = async function() {
+            if (isUpdatingFromRemote) return;
             let statusEl = document.getElementById('syncStatus');
             if (statusEl) statusEl.innerText = "☁️ Speichert in Cloud...";
 
@@ -170,13 +185,15 @@
             }
         };
 
-        // Echtzeit Live-Sync (ignoriert eigene Updates um Zurücksetzen zu verhindern)
+        // Echtzeit Live-Sync
         onSnapshot(docRef, (docSnap) => {
             if (docSnap.exists()) {
                 let remoteData = docSnap.data();
                 if (JSON.stringify(localData) !== JSON.stringify(remoteData)) {
+                    isUpdatingFromRemote = true;
                     localData = remoteData;
                     refreshAllUI();
+                    isUpdatingFromRemote = false;
                 }
             }
         });
@@ -248,9 +265,18 @@
             wochentage.forEach(tag => {
                 const slotsContainer = document.getElementById('builder_slots_' + tag);
                 if (slotsContainer) {
-                    const selects = slotsContainer.querySelectorAll('select');
+                    const rowDivs = slotsContainer.querySelectorAll('.task-row');
                     let tasks = [];
-                    selects.forEach(sel => { if (sel.value) tasks.push(sel.value); });
+                    rowDivs.forEach(row => {
+                        const sel = row.querySelector('select');
+                        const noteInput = row.querySelector('input[type="text"]');
+                        if (sel && sel.value) {
+                            tasks.push({
+                                name: sel.value,
+                                note: noteInput ? noteInput.value.trim() : ""
+                            });
+                        }
+                    });
                     localData.tasks[tag] = tasks;
                 }
             });
@@ -318,7 +344,6 @@
             const container = document.getElementById('builderContainer');
             if (!container) return;
             
-            // Merken, welche Details (Wochentage) offen waren
             let openDays = {};
             container.querySelectorAll('details').forEach((det, idx) => {
                 openDays[wochentage[idx]] = det.open;
@@ -337,11 +362,15 @@
             });
 
             wochentage.forEach(function(tag) {
-                let savedTasks = localData.tasks[tag] || [""];
+                let savedTasks = localData.tasks[tag] || [{name: "", note: ""}];
                 let slotsContainer = document.getElementById('builder_slots_' + tag);
                 if (slotsContainer) {
                     slotsContainer.innerHTML = '';
-                    savedTasks.forEach(val => { slotsContainer.innerHTML += createSlotHtml(tag, val); });
+                    savedTasks.forEach(taskObj => {
+                        let taskName = typeof taskObj === 'string' ? taskObj : (taskObj.name || "");
+                        let taskNote = typeof taskObj === 'string' ? "" : (taskObj.note || "");
+                        slotsContainer.innerHTML += createSlotHtml(tag, taskName, taskNote);
+                    });
                 }
             });
 
@@ -353,7 +382,7 @@
             if (pageTitle) pageTitle.innerText = "📋 Wochenplan für " + (localData.child_name || "Oliver");
         }
 
-        function createSlotHtml(tag, selectedVal) {
+        function createSlotHtml(tag, selectedVal, noteVal) {
             let optionsHtml = '<option value="">-- Aufgabe wählen --</option>';
             localData.shared_aufgaben.forEach(function(a) {
                 let sel = (a === selectedVal) ? ' selected' : '';
@@ -361,8 +390,11 @@
             });
 
             return '<div class="task-row">' +
+                   '<div class="task-row-inner">' +
                    '<select onchange="saveAdminChanges()"> ' + optionsHtml + '</select>' +
                    '<button type="button" class="remove-slot-btn" onclick="removeSlot(this)">X</button>' +
+                   '</div>' +
+                   '<input type="text" placeholder="Notiz / Detail (z.B. nur ausräumen)..." value="' + (noteVal || '') + '" oninput="saveAdminChanges()">' +
                    '</div>';
         }
 
@@ -370,28 +402,26 @@
             collectAdminChanges();
             const slotsContainer = document.getElementById('builder_slots_' + tag);
             if (!slotsContainer) return;
-            let selects = slotsContainer.querySelectorAll('select');
-            let currentValues = [];
-            selects.forEach(s => currentValues.push(s.value));
-            currentValues.push("");
             
-            localData.tasks[tag] = currentValues;
+            if (!localData.tasks[tag]) localData.tasks[tag] = [];
+            localData.tasks[tag].push({name: "", note: ""});
+            
             renderBuilder();
             saveAdminChanges();
         }
 
         function removeSlot(btn) {
             collectAdminChanges();
-            const row = btn.parentElement;
+            const row = btn.closest('.task-row');
             const slotsContainer = row.parentElement;
             if (slotsContainer.children.length > 1) {
                 let tag = slotsContainer.id.replace('builder_slots_', '');
-                let selects = slotsContainer.querySelectorAll('select');
-                let currentValues = [];
-                selects.forEach((s, idx) => {
-                    if (s !== row.querySelector('select')) currentValues.push(s.value);
-                });
-                localData.tasks[tag] = currentValues;
+                let rowDivs = Array.from(slotsContainer.querySelectorAll('.task-row'));
+                let rowIndex = rowDivs.indexOf(row);
+                
+                if (rowIndex > -1 && localData.tasks[tag]) {
+                    localData.tasks[tag].splice(rowIndex, 1);
+                }
                 renderBuilder();
                 saveAdminChanges();
             } else {
@@ -411,24 +441,32 @@
 
             wochentage.forEach(function(tag) {
                 let tasks = localData.tasks[tag] || [];
-                if (tasks.length === 0) tasks = ["Keine Aufgaben für heute"];
+                if (tasks.length === 0) tasks = [{name: "Keine Aufgaben für heute", note: ""}];
 
                 html += '<details open><summary>📅 ' + tag + '</summary><div class="day-content">';
                 html += '<table class="child-view-table"><tbody>';
 
-                tasks.forEach(function(task, index) {
-                    if (!task) return;
+                tasks.forEach(function(taskObj, index) {
+                    let taskName = typeof taskObj === 'string' ? taskObj : (taskObj.name || "");
+                    let taskNote = typeof taskObj === 'string' ? "" : (taskObj.note || "");
+                    if (!taskName) return;
+
                     let uniqueId = tag + '_' + index;
                     let taskDisplayHtml = '';
                     
-                    if (task.toLowerCase() === 'lernzeit') {
+                    let lowerName = taskName.toLowerCase();
+                    if (lowerName === 'lernzeit') {
                         taskDisplayHtml = '<span>Lernzeit </span>' +
                                           '<a href="https://petruck670-cyber.github.io/Lernapp/Lernapp.html?start=15" target="_blank" style="background:#3b82f6; color:white; padding:4px 8px; text-decoration:none; border-radius:4px; font-size:12px; margin-left:8px; display:inline-block;">🚀 Lernapp öffnen</a>';
-                    } else if (task.toLowerCase() === 'zimmer aufräumen') {
+                    } else if (lowerName === 'zimmer aufräumen') {
                         taskDisplayHtml = '<span>Zimmer aufräumen </span>' +
                                           '<a href="https://petruck670-cyber.github.io/Zimmer/zimmer.html" target="_blank" style="background:#f97316; color:white; padding:4px 8px; text-decoration:none; border-radius:4px; font-size:12px; margin-left:8px; display:inline-block;">🧹 Aufräum-App öffnen</a>';
                     } else {
-                        taskDisplayHtml = '<span>' + task + '</span>';
+                        taskDisplayHtml = '<span>' + taskName + '</span>';
+                    }
+
+                    if (taskNote) {
+                        taskDisplayHtml += '<div style="font-size: 13px; color: #64748b; font-style: italic; margin-top: 2px; margin-left: 28px;">💡 ' + taskNote + '</div>';
                     }
 
                     let isChecked = localData.checkboxes && localData.checkboxes[uniqueId] ? 'checked' : '';
@@ -436,8 +474,10 @@
 
                     html += '<tr id="row_' + uniqueId + '" class="' + rowClass + '">' +
                             '<td class="task-cell">' +
-                            '<input type="checkbox" id="' + uniqueId + '" ' + isChecked + ' onchange="toggleTask(\'' + uniqueId + '\')"> ' +
-                            taskDisplayHtml +
+                            '<div style="display: flex; align-items: flex-start;">' +
+                            '<input type="checkbox" id="' + uniqueId + '" ' + isChecked + ' onchange="toggleTask(\'' + uniqueId + '\')" style="margin-top: 3px;"> ' +
+                            '<div style="flex-grow: 1;">' + taskDisplayHtml + '</div>' +
+                            '</div>' +
                             '</td></tr>';
                 });
 
