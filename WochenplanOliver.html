@@ -134,6 +134,12 @@
             font-weight: 600;
             text-align: center;
         }
+        /* Druck-Ansicht optimieren */
+        @media print {
+            .admin-panel, button, .sync-status, input[type="checkbox"] { display: none !important; }
+            body { background: white; box-shadow: none; margin: 0; padding: 0; }
+            details { border: 1px solid #ccc; break-inside: avoid; }
+        }
     </style>
 
     <!-- Firebase SDKs einbinden -->
@@ -153,7 +159,6 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        // Eigener Cloud-Pfad für Oliver, damit es getrennt von Lina läuft:
         const docRef = doc(db, "apps", "wochenplan_oliver");
 
         let isUpdatingFromRemote = false;
@@ -185,7 +190,6 @@
             }
         };
 
-        // Echtzeit Live-Sync
         onSnapshot(docRef, (docSnap) => {
             if (docSnap.exists()) {
                 let remoteData = docSnap.data();
@@ -232,6 +236,11 @@
             <h4 style="margin: 15px 0 5px 0; color: #1e293b;">Wochentage belegen:</h4>
             <div id="builderContainer"></div>
             
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                <button onclick="wochenplanLeeren()" style="background-color: #ef4444; flex: 1;">🗑️ Gesamten Plan leeren</button>
+                <button onclick="window.print()" style="background-color: #8b5cf6; flex: 1;">🖨️ Plan ausdrucken</button>
+            </div>
+
             <div id="syncStatus" class="sync-status">⚡ Firebase Live-Sync aktiv</div>
 
             <button onclick="lockAdminMode()" style="background-color: #f97316; margin-top: 15px; width: 100%;">🔒 Bearbeiten beenden & Ansicht sperren</button>
@@ -269,11 +278,13 @@
                     let tasks = [];
                     rowDivs.forEach(row => {
                         const sel = row.querySelector('select');
-                        const noteInput = row.querySelector('input[type="text"]');
+                        const noteInput = row.querySelector('.note-input');
+                        const terminInput = row.querySelector('.termin-input');
                         if (sel && sel.value) {
                             tasks.push({
                                 name: sel.value,
-                                note: noteInput ? noteInput.value.trim() : ""
+                                note: noteInput ? noteInput.value.trim() : "",
+                                termin: terminInput ? terminInput.value.trim() : ""
                             });
                         }
                     });
@@ -286,6 +297,18 @@
             collectAdminChanges();
             renderPublicView();
             await syncToCloud();
+        }
+
+        async function wochenplanLeeren() {
+            if (confirm("Möchtest du wirklich alle Aufgaben für die ganze Woche löschen?")) {
+                collectAdminChanges();
+                wochentage.forEach(tag => {
+                    localData.tasks[tag] = [{ name: "", note: "", termin: "" }];
+                });
+                renderBuilder();
+                renderPublicView();
+                await syncToCloud();
+            }
         }
 
         function checkAdminLogin() {
@@ -362,14 +385,15 @@
             });
 
             wochentage.forEach(function(tag) {
-                let savedTasks = localData.tasks[tag] || [{name: "", note: ""}];
+                let savedTasks = localData.tasks[tag] || [{name: "", note: "", termin: ""}];
                 let slotsContainer = document.getElementById('builder_slots_' + tag);
                 if (slotsContainer) {
                     slotsContainer.innerHTML = '';
                     savedTasks.forEach(taskObj => {
                         let taskName = typeof taskObj === 'string' ? taskObj : (taskObj.name || "");
                         let taskNote = typeof taskObj === 'string' ? "" : (taskObj.note || "");
-                        slotsContainer.innerHTML += createSlotHtml(tag, taskName, taskNote);
+                        let taskTermin = typeof taskObj === 'string' ? "" : (taskObj.termin || "");
+                        slotsContainer.innerHTML += createSlotHtml(tag, taskName, taskNote, taskTermin);
                     });
                 }
             });
@@ -382,7 +406,7 @@
             if (pageTitle) pageTitle.innerText = "📋 Wochenplan für " + (localData.child_name || "Oliver");
         }
 
-        function createSlotHtml(tag, selectedVal, noteVal) {
+        function createSlotHtml(tag, selectedVal, noteVal, terminVal) {
             let optionsHtml = '<option value="">-- Aufgabe wählen --</option>';
             localData.shared_aufgaben.forEach(function(a) {
                 let sel = (a === selectedVal) ? ' selected' : '';
@@ -394,7 +418,8 @@
                    '<select onchange="saveAdminChanges()"> ' + optionsHtml + '</select>' +
                    '<button type="button" class="remove-slot-btn" onclick="removeSlot(this)">X</button>' +
                    '</div>' +
-                   '<input type="text" placeholder="Notiz / Detail (z.B. nur ausräumen)..." value="' + (noteVal || '') + '" oninput="saveAdminChanges()">' +
+                   '<input type="text" class="note-input" placeholder="Notiz / Detail (z.B. nur ausräumen)..." value="' + (noteVal || '') + '" oninput="saveAdminChanges()">' +
+                   '<input type="text" class="termin-input" placeholder="📅 Termin (z.B. Arzttermin 14:00 Uhr)..." value="' + (terminVal || '') + '" oninput="saveAdminChanges()">' +
                    '</div>';
         }
 
@@ -404,7 +429,7 @@
             if (!slotsContainer) return;
             
             if (!localData.tasks[tag]) localData.tasks[tag] = [];
-            localData.tasks[tag].push({name: "", note: ""});
+            localData.tasks[tag].push({name: "", note: "", termin: ""});
             
             renderBuilder();
             saveAdminChanges();
@@ -441,7 +466,7 @@
 
             wochentage.forEach(function(tag) {
                 let tasks = localData.tasks[tag] || [];
-                if (tasks.length === 0) tasks = [{name: "Keine Aufgaben für heute", note: ""}];
+                if (tasks.length === 0) tasks = [{name: "Keine Aufgaben für heute", note: "", termin: ""}];
 
                 html += '<details open><summary>📅 ' + tag + '</summary><div class="day-content">';
                 html += '<table class="child-view-table"><tbody>';
@@ -449,6 +474,7 @@
                 tasks.forEach(function(taskObj, index) {
                     let taskName = typeof taskObj === 'string' ? taskObj : (taskObj.name || "");
                     let taskNote = typeof taskObj === 'string' ? "" : (taskObj.note || "");
+                    let taskTermin = typeof taskObj === 'string' ? "" : (taskObj.termin || "");
                     if (!taskName) return;
 
                     let uniqueId = tag + '_' + index;
@@ -463,6 +489,10 @@
                                           '<a href="https://petruck670-cyber.github.io/Zimmer/zimmer.html" target="_blank" style="background:#f97316; color:white; padding:4px 8px; text-decoration:none; border-radius:4px; font-size:12px; margin-left:8px; display:inline-block;">🧹 Aufräum-App öffnen</a>';
                     } else {
                         taskDisplayHtml = '<span>' + taskName + '</span>';
+                    }
+
+                    if (taskTermin) {
+                        taskDisplayHtml += '<div style="font-size: 13px; color: #dc2626; font-weight: 600; margin-top: 2px; margin-left: 28px;">⏰ ' + taskTermin + '</div>';
                     }
 
                     if (taskNote) {
